@@ -1,0 +1,16 @@
+{
+  "version": "1.0.0-2026-07-03",
+  "killSwitch": false,
+  "message": "",
+  "modules": [
+    {
+      "id": "app",
+      "file": "app.js",
+      "sha256": "ac537debe22f76cd125e47cf280860ea661e14323a27360ab98228d8791ab1c2",
+      "size": 909537
+    }
+  ],
+  "data": {
+    "rogueArchive": "/data/%E5%B1%B1%E6%B2%B3%E5%9B%BE%E6%95%B0%E6%8D%AE_2026-07-03%20(1).json"
+  }
+}

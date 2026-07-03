@@ -6,7 +6,9 @@
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "build": "node scripts/build-module.js",
+    "prestart": "node scripts/build-module.js"
   },
   "engines": {
     "node": ">=18"

@@ -1,0 +1,127 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>幽灵山庄小抄 · 云端安装</title>
+  <style>
+    :root {
+      --bg: #0b1628; --panel: #0f2744; --border: #2a4a6e;
+      --accent: #7ec8e3; --text: #e8f4fc; --muted: #8fb3cc; --good: #4ade80; --warn: #fbbf24;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0; font-family: -apple-system, "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg); color: var(--text); min-height: 100vh; padding: 24px;
+    }
+    .wrap { max-width: 720px; margin: 0 auto; }
+    h1 { color: var(--accent); font-size: 24px; margin: 0 0 8px; }
+    .sub { color: var(--muted); font-size: 14px; margin-bottom: 24px; line-height: 1.6; }
+    .card {
+      background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
+      padding: 20px; margin-bottom: 16px;
+    }
+    .card h2 { font-size: 16px; margin: 0 0 12px; color: var(--accent); }
+    .status { font-size: 13px; line-height: 1.7; }
+    .status .dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; margin-right: 6px; }
+    .dot.ok { background: var(--good); }
+    .dot.wait { background: var(--warn); }
+    .dot.err { background: #f87171; }
+    button, .btn {
+      display: inline-block; padding: 10px 18px; border-radius: 8px; border: 1px solid var(--accent);
+      background: #1a3a5c; color: var(--accent); font-size: 14px; cursor: pointer; text-decoration: none;
+      margin-right: 8px; margin-top: 8px;
+    }
+    button.primary, .btn.primary { background: #5aa8c8; color: #0b1628; font-weight: 600; }
+    code { background: #0b1628; padding: 2px 6px; border-radius: 4px; font-size: 12px; }
+    ol { padding-left: 20px; color: var(--muted); font-size: 14px; line-height: 1.8; }
+    ol b { color: var(--text); }
+    .note { font-size: 12px; color: var(--muted); margin-top: 12px; line-height: 1.6; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>幽灵山庄小抄 · 云端版</h1>
+    <p class="sub">
+      脚本从本服务器加载，不依赖 GitHub。Render 免费实例休眠后首次访问可能需要 30–60 秒唤醒；
+      油猴端已支持<strong>自动重试 + 本地缓存</strong>，唤醒前可短暂使用上一版缓存。
+    </p>
+
+    <div class="card">
+      <h2>服务器状态</h2>
+      <div class="status" id="statusBox">检测中…</div>
+      <button type="button" id="wakeBtn">唤醒 / 重新检测</button>
+      <button type="button" id="pingBtn">轻量心跳</button>
+    </div>
+
+    <div class="card">
+      <h2>安装油猴脚本（引导层）</h2>
+      <p class="status">只需安装一次；之后功能更新从服务器拉取，无需重装。</p>
+      <a class="btn primary" id="installLink" href="/cheat/bootstrap.user.js">安装 / 更新 bootstrap</a>
+      <a class="btn" href="/">山河图数据库</a>
+    </div>
+
+    <div class="card">
+      <h2>使用步骤</h2>
+      <ol>
+        <li>先点上方 <b>唤醒 / 重新检测</b>，直到状态为绿色「在线」</li>
+        <li>安装 Tampermonkey 后，点击 <b>安装 bootstrap</b></li>
+        <li>进入三国杀 OL 页面，脚本会自动连接服务器并加载完整小抄</li>
+        <li>若提示冷启动，等待约 30 秒后刷新游戏页；或使用缓存版继续</li>
+      </ol>
+      <p class="note">
+        更新小抄：在本地修改 <code>幽灵山庄小抄.txt</code> 后运行 <code>npm run build</code> 并部署；
+        玩家刷新游戏页即可获取新模块（bootstrap 会校验 sha256）。
+      </p>
+    </div>
+  </div>
+
+  <script>
+    const statusBox = document.getElementById("statusBox");
+    const installLink = document.getElementById("installLink");
+
+    function setStatus(html) { statusBox.innerHTML = html; }
+
+    async function checkHealth(label) {
+      setStatus('<span class="dot wait"></span>' + (label || "检测中…"));
+      const t0 = Date.now();
+      try {
+        const ctrl = new AbortController();
+        const timer = setTimeout(() => ctrl.abort(), 15000);
+        const res = await fetch("/api/health", { cache: "no-store", signal: ctrl.signal });
+        clearTimeout(timer);
+        const ms = Date.now() - t0;
+        const data = await res.json();
+        if (!res.ok) throw new Error("HTTP " + res.status);
+        setStatus(
+          '<span class="dot ok"></span>在线 · 响应 ' + ms + 'ms<br>' +
+          '版本 <code>' + (data.manifestVersion || "?") + '</code> · ' +
+          '模块 ' + (data.moduleReady ? "已就绪" : "未构建") + ' · ' +
+          '运行 ' + (data.uptime || 0) + 's'
+        );
+        return true;
+      } catch (e) {
+        const ms = Date.now() - t0;
+        setStatus(
+          '<span class="dot err"></span>未响应（' + ms + 'ms）— 可能正在冷启动<br>' +
+          '<span style="color:var(--muted)">请多次点击唤醒，或 30 秒后再试。已安装油猴的用户会使用本地缓存。</span>'
+        );
+        return false;
+      }
+    }
+
+    async function wakeLoop() {
+      for (let i = 0; i < 8; i++) {
+        const ok = await checkHealth("唤醒中 " + (i + 1) + "/8 …");
+        if (ok) return;
+        await new Promise((r) => setTimeout(r, 4000));
+      }
+    }
+
+    document.getElementById("wakeBtn").onclick = wakeLoop;
+    document.getElementById("pingBtn").onclick = () => checkHealth("心跳检测…");
+    installLink.href = "/cheat/bootstrap.user.js?t=" + Date.now();
+    checkHealth();
+  </script>
+</body>
+</html>

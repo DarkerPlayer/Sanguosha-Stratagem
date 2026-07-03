@@ -70,8 +70,8 @@
   <div class="wrap">
     <h1>幽灵山庄小抄 · 云端版</h1>
     <p class="sub">
-      脚本从本服务器加载，不依赖 GitHub。<strong>每台设备首次联网授权后，完整小抄（含公会 ID 校验）缓存 7 天</strong>，
-      期内进游戏<strong>不再请求云端</strong>；7 天后授权过期，再自动连服务器续期。
+      安装后<strong>每周自动更新</strong>一次小抄；其余时间本地秒开，无需联网。
+      首次或到期更新时可能需等待约 30–90 秒，属正常现象。
     </p>
 
     <div class="card">
@@ -85,7 +85,7 @@
 
     <div class="card">
       <h2>安装 / 更新油猴（引导层）</h2>
-      <p class="status">只需安装一次 bootstrap；小抄逻辑缓存 7 天，期内免联网。过期后刷新游戏页会自动续期。</p>
+      <p class="status">只需安装一次 bootstrap；小抄每周自动同步，平时本地运行。</p>
       <div class="btn-row">
         <a class="btn primary" id="installLink" href="/cheat/bootstrap.user.js">一键安装油猴</a>
         <button type="button" class="primary" id="updateBtn">一键更新油猴</button>
@@ -109,9 +109,9 @@
       <ol>
         <li>先点 <b>唤醒 / 重新检测</b>，直到状态为绿色「在线」</li>
         <li>安装 Tampermonkey 后，点 <b>一键安装油猴</b>（或复制代码手动粘贴）</li>
-        <li>进入三国杀 OL — <b>首次</b>会连云端下载并缓存（约 30–90 秒，需耐心）</li>
-        <li>之后 <b>7 天内</b>进游戏直接用本地缓存，不再唤醒服务器</li>
-        <li>7 天后授权过期，刷新游戏页会自动重新连云端续期</li>
+        <li>进入三国杀 OL — <b>首次</b>会显示「正在准备小抄」，约 30–90 秒</li>
+        <li>之后一周内进游戏<strong>秒开</strong>，不再连服务器</li>
+        <li>满一周后自动「每周更新」，刷新游戏页即可</li>
       </ol>
     </div>
   </div>
@@ -161,7 +161,7 @@
         const ms = Date.now() - t0;
         setStatus(
           '<span class="dot err"></span>未响应（' + ms + 'ms）— 可能正在冷启动<br>' +
-          '<span style="color:var(--muted)">请多次点击唤醒，或 30 秒后再试。已安装油猴的用户会使用本地缓存。</span>'
+          '<span style="color:var(--muted)">请多次点击检测，或稍后再试（已安装用户平时走本地，不受影响）</span>'
         );
         return false;
       }

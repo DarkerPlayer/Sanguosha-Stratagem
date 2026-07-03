@@ -289,7 +289,7 @@
     <h2>山河图数据库</h2>
     <div class="loader-spin"></div>
     <p id="loaderText">正在加载档案数据…</p>
-    <p style="font-size:12px;margin-top:12px;color:var(--muted)">山河图数据_2026-07-03 copy.json</p>
+    <p style="font-size:12px;margin-top:12px;color:var(--muted)">山河图数据_2026-07-03 (1).json · 含 rogueWorld 完整数据</p>
   </div>
 
   <div id="app" class="app hidden">
@@ -374,7 +374,7 @@
           <div class="split-list">
             <div class="table-wrap">
               <table>
-                <thead><tr><th width="72">ID</th><th width="90">分类</th><th width="120">名称</th><th width="140">所属武将</th><th>描述摘要</th></tr></thead>
+                <thead><tr><th width="72">ID</th><th width="90">分类</th><th width="120">名称</th><th width="160">关联武将/关卡</th><th>描述摘要</th></tr></thead>
                 <tbody id="spellBody"></tbody>
               </table>
             </div>
@@ -438,7 +438,7 @@
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th width="60">ID</th><th width="90">分类</th><th width="140">名称</th><th width="70">价格</th><th width="60">等级</th><th>描述</th></tr></thead>
+            <thead><tr><th width="60">ID</th><th width="60">类型</th><th width="120">名称</th><th width="70">价格</th><th width="50">等级</th><th width="70">技能ID</th><th>描述</th></tr></thead>
             <tbody id="shopBody"></tbody>
           </table>
         </div>
@@ -454,7 +454,7 @@
         </div>
         <div class="table-wrap">
           <table>
-            <thead><tr><th width="60">ID</th><th width="120">名称</th><th width="80">章节</th><th width="50">Boss</th><th>场景描述</th></tr></thead>
+            <thead><tr><th width="60">ID</th><th width="110">名称</th><th width="70">坐标</th><th width="50">Boss</th><th width="60">技能</th><th>场景描述</th></tr></thead>
             <tbody id="cityBody"></tbody>
           </table>
         </div>
@@ -463,17 +463,22 @@
 
       <section id="sec-fights" class="section">
         <h1>战斗关卡</h1>
-        <p class="subtitle">Rfight 关卡介绍、奖励与敌将数量</p>
+        <p class="subtitle">4246 个关卡，含敌将技能关联（如「蜀汉归乡」）</p>
         <div class="toolbar">
-          <input type="search" id="fightSearch" placeholder="搜索关卡名、描述、奖励…" />
+          <input type="search" id="fightSearch" placeholder="搜索关卡名、奖励、技能名…" />
         </div>
-        <div class="table-wrap">
-          <table>
-            <thead><tr><th width="60">ID</th><th width="140">名称</th><th width="70">敌将</th><th>关卡介绍</th><th width="160">奖励</th></tr></thead>
-            <tbody id="fightBody"></tbody>
-          </table>
+        <div class="split-layout">
+          <div class="split-list">
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th width="60">ID</th><th width="130">名称</th><th width="50">敌将</th><th width="60">奖励</th><th>敌将技能</th></tr></thead>
+                <tbody id="fightBody"></tbody>
+              </table>
+            </div>
+            <div class="pager" id="fightPager"></div>
+          </div>
+          <div class="detail-panel empty" id="fightDetail">点击关卡查看敌将技能</div>
         </div>
-        <div class="pager" id="fightPager"></div>
       </section>
 
       <section id="sec-events" class="section">
@@ -545,19 +550,23 @@
 
   <script>
     const PAGE = 60;
-    const ARCHIVE_URL = "/data/%E5%B1%B1%E6%B2%B3%E5%9B%BE%E6%95%B0%E6%8D%AE_2026-07-03%20copy.json";
-    const ARCHIVE_NAME = "山河图数据_2026-07-03 copy.json";
+    const ARCHIVE_URL = "/data/%E5%B1%B1%E6%B2%B3%E5%9B%BE%E6%95%B0%E6%8D%AE_2026-07-03%20(1).json";
+    const ARCHIVE_NAME = "山河图数据_2026-07-03 (1).json";
     let RAW = null;
     let SPELLS = [];
     let GENERALS = [];
     let RUNS = [];
     let GENERAL_SKILLS = {};
+    let FIGHT_SKILLS = {};
+    let SKILL_FIGHTS = {};
+    let FIGHT_BY_ID = {};
     let SKILL_OWNERS = {};
     let ROGUE_WORLD = { shops: [], mapCities: [], eventChoices: [], fights: [], events: [], schools: [], talents: [] };
     let ROGUE_SPELLS = [];
     let expandedGeneral = null;
     let selectedSpellId = null;
     let selectedRogueId = null;
+    let selectedFightId = null;
     let spellCat = "全部";
     let spellBand = "全部";
     let generalLetter = "全部";
@@ -641,11 +650,13 @@
       }
       panel.className = "detail-panel";
       const gens = RAW.archive.generals || {};
-      const owners = (SKILL_OWNERS[String(spell.id)] || []).map((gid) => gName(gid, gens)).join("、") || "—";
+      const ownerGens = (SKILL_OWNERS[String(spell.id)] || []).map((gid) => gName(gid, gens)).join("、") || "";
+      const ownerFights = (SKILL_FIGHTS[String(spell.id)] || []).map((fid) => (FIGHT_BY_ID[fid] && FIGHT_BY_ID[fid].name) || ("关卡#" + fid)).join("、") || "";
       panel.innerHTML =
         '<h3>' + esc(spell.name || "技能#" + spell.id) + '</h3>' +
         '<div class="meta-line">ID <span class="id-col">' + spell.id + '</span> · <span class="tag">' + esc(spell.category) + '</span></div>' +
-        (owners !== "—" ? '<div class="meta-line">所属武将：' + esc(owners) + '</div>' : '') +
+        (ownerGens ? '<div class="meta-line">关联武将：' + esc(ownerGens) + '</div>' : '') +
+        (ownerFights ? '<div class="meta-line">关联关卡：' + esc(ownerFights) + '</div>' : '') +
         '<div class="full-desc">' + esc(spell.desc || "（无描述）") + '</div>' +
         '<div class="detail-actions">' +
         '<button type="button" id="cpNameBtn">复制名称</button>' +
@@ -669,40 +680,65 @@
       return (name || "").charAt(0) || "#";
     }
 
-    function buildGeneralSkillMaps(arch, runs) {
-      const gs = {};
-      const raw = arch.generalSkills || {};
-      Object.keys(raw).forEach((gid) => {
-        const list = raw[gid];
+    function buildLinkMaps(arch, runs) {
+      const rawGs = arch.generalSkills || {};
+      const fights = (arch.rogueWorld && arch.rogueWorld.fights) || [];
+      const fightById = {};
+      fights.forEach((f) => { fightById[String(f.id)] = f; });
+
+      const fightSkills = {};
+      const skillFights = {};
+      const generalSkills = {};
+      const gens = arch.generals || {};
+
+      Object.keys(rawGs).forEach((key) => {
+        const list = rawGs[key];
         if (!Array.isArray(list)) return;
-        gs[gid] = list.map((s) => ({
+        const normalized = list.map((s) => ({
           id: Number(s.id),
           name: s.name || "",
           desc: s.desc || "",
           level: s.level
         })).filter((s) => !isNaN(s.id));
+        if (!normalized.length) return;
+        if (fightById[key]) {
+          fightSkills[key] = normalized;
+          normalized.forEach((sk) => {
+            const k = String(sk.id);
+            if (!skillFights[k]) skillFights[k] = [];
+            if (!skillFights[k].includes(key)) skillFights[k].push(key);
+          });
+        }
+        if (gens[key]) generalSkills[key] = normalized;
       });
-      runs.forEach((r) => {
+
+      (runs || []).forEach((r) => {
         if (!r.generalId || !(r.skills || []).length) return;
         const key = String(r.generalId);
-        if (!gs[key]) gs[key] = [];
-        const seen = new Set(gs[key].map((x) => x.id));
+        if (!generalSkills[key]) generalSkills[key] = [];
+        const seen = new Set(generalSkills[key].map((x) => x.id));
         r.skills.forEach((s) => {
           const id = Number(s.id);
           if (isNaN(id) || seen.has(id)) return;
           seen.add(id);
-          gs[key].push({ id, name: s.name || "", desc: s.desc || "" });
+          generalSkills[key].push({ id, name: s.name || "", desc: s.desc || "" });
         });
       });
-      const owners = {};
-      Object.keys(gs).forEach((gid) => {
-        gs[gid].forEach((sk) => {
+
+      const skillOwners = {};
+      Object.keys(generalSkills).forEach((gid) => {
+        generalSkills[gid].forEach((sk) => {
           const k = String(sk.id);
-          if (!owners[k]) owners[k] = [];
-          if (!owners[k].includes(gid)) owners[k].push(gid);
+          if (!skillOwners[k]) skillOwners[k] = [];
+          if (!skillOwners[k].includes(gid)) skillOwners[k].push(gid);
         });
       });
-      return { gs, owners };
+
+      return { fightSkills, skillFights, generalSkills, skillOwners, fightById };
+    }
+
+    function getFightSkills(fid) {
+      return FIGHT_SKILLS[String(fid)] || [];
     }
 
     function getGeneralSkills(gid) {
@@ -719,11 +755,31 @@
     }
 
     function ownersHtml(spellId) {
-      const ids = SKILL_OWNERS[String(spellId)] || [];
-      if (!ids.length) return '<span style="color:var(--muted)">—</span>';
       const gens = RAW.archive.generals || {};
-      return ids.slice(0, 4).map((gid) => '<span class="owner-link" data-goto-general="' + gid + '">' + esc(gName(gid, gens)) + "</span>").join("") +
-        (ids.length > 4 ? '<span style="color:var(--muted);font-size:12px"> +' + (ids.length - 4) + "</span>" : "");
+      const gids = SKILL_OWNERS[String(spellId)] || [];
+      const parts = [];
+      if (gids.length) {
+        parts.push(gids.slice(0, 2).map((gid) => '<span class="owner-link" data-goto-general="' + gid + '">' + esc(gName(gid, gens)) + "</span>").join(""));
+        if (gids.length > 2) parts.push('<span style="color:var(--muted);font-size:11px">+' + (gids.length - 2) + "将</span>");
+      }
+      const fids = SKILL_FIGHTS[String(spellId)] || [];
+      if (fids.length) {
+        parts.push(fids.slice(0, 2).map((fid) => {
+          const f = FIGHT_BY_ID[fid];
+          return '<span class="owner-link" data-goto-fight="' + fid + '">' + esc((f && f.name) || "关卡#" + fid) + "</span>";
+        }).join(""));
+        if (fids.length > 2) parts.push('<span style="color:var(--muted);font-size:11px">+' + (fids.length - 2) + "关</span>");
+      }
+      return parts.length ? parts.join("<br>") : '<span style="color:var(--muted)">—</span>';
+    }
+
+    function gotoFight(fid) {
+      selectedFightId = String(fid);
+      navigateSection("fights");
+      const f = FIGHT_BY_ID[fid];
+      document.getElementById("fightSearch").value = (f && f.name) || String(fid);
+      fightPage = 0;
+      renderFights();
     }
 
     function gotoGeneral(gid) {
@@ -785,9 +841,12 @@
       })).sort((a, b) => a.id - b.id);
 
       RUNS = mergeRuns(arch.runs || []);
-      const maps = buildGeneralSkillMaps(arch, RUNS);
-      GENERAL_SKILLS = maps.gs;
-      SKILL_OWNERS = maps.owners;
+      const maps = buildLinkMaps(arch, RUNS);
+      GENERAL_SKILLS = maps.generalSkills;
+      FIGHT_SKILLS = maps.fightSkills;
+      SKILL_FIGHTS = maps.skillFights;
+      SKILL_OWNERS = maps.skillOwners;
+      FIGHT_BY_ID = maps.fightById;
       const rw = arch.rogueWorld || {};
       ROGUE_WORLD = {
         shops: rw.shops || [],
@@ -902,12 +961,13 @@
       const rw = ROGUE_WORLD;
       const hasWorld = hasRogueWorld();
 
+      const fightSkillLinks = Object.keys(FIGHT_SKILLS).length;
       const health = [
         { ok: SPELLS.length > 0, label: "技能库 " + SPELLS.length + " 条", sub: "其中山河图专属 " + ROGUE_SPELLS.length + " 条" },
-        { ok: GENERALS.length > 0, label: "武将 " + GENERALS.length + " 名", sub: "姓名索引可用" },
-        { ok: linkedGens > 0, warn: !linkedGens, label: linkedGens ? "武将技能关联 " + linkedGens + " 名" : "武将技能关联：未导出", sub: linkedGens ? "" : "需新版脚本重新导出 generalSkills" },
-        { ok: hasWorld, warn: !hasWorld, label: hasWorld ? "世界数据已包含" : "世界数据：未包含", sub: hasWorld ? "商店/城池/关卡/事件" : "rogueWorld 为空，商店/关卡等需重新导出" },
-        { ok: validRuns.length > 0, warn: validRuns.length && !RUNS[0]?.skills?.length, label: "历史局 " + RUNS.length + " 条（合并后）", sub: validRuns.length ? "有效 " + validRuns.length + " 条" : "多为重复点击记录" }
+        { ok: GENERALS.length > 0, label: "武将 " + GENERALS.length + " 名", sub: "已关联技能 " + linkedGens + " 名" },
+        { ok: fightSkillLinks > 0, label: "关卡敌将技能 " + fightSkillLinks + " 关", sub: "generalSkills 按关卡 ID 索引" },
+        { ok: hasWorld, label: "世界数据已加载", sub: "商店 " + rw.shops.length + " · 城池 " + rw.mapCities.length + " · 关卡 " + rw.fights.length + " · 事件 " + rw.eventChoices.length },
+        { ok: validRuns.length > 0, warn: !(RAW.current && RAW.current.skills && RAW.current.skills.length), label: "历史局 " + RUNS.length + " 条", sub: "当前局武将 " + (RAW.current && RAW.current.generalId ? gName(RAW.current.generalId, arch.generals) : "—") }
       ];
       document.getElementById("healthBox").innerHTML = health.map((h) => {
         const dot = h.ok && !h.warn ? "ok" : (h.warn ? "warn" : "miss");
@@ -915,11 +975,11 @@
       }).join("");
 
       document.getElementById("quickGrid").innerHTML = [
+        { sec: "fights", title: "战斗关卡", num: rw.fights.length, sub: "含蜀汉归乡等" },
+        { sec: "shops", title: "商店", num: rw.shops.length, sub: "剧情战法/技能/装备" },
         { sec: "roguemap", title: "山河图专属", num: ROGUE_SPELLS.length, sub: "ID 3000–4999" },
-        { sec: "spells", title: "全技能库", num: SPELLS.length, sub: "含标准牌与扩展" },
-        { sec: "generals", title: "武将图鉴", num: GENERALS.length, sub: "按姓浏览" },
-        { sec: "spells", title: "武将技能", num: cats["武将技能"] || 0, sub: "点击后筛选", cat: "武将技能" }
-      ].map((q) => '<div class="quick-card" data-sec="' + q.sec + '"' + (q.cat ? ' data-cat="' + esc(q.cat) + '"' : '') + '><div class="qc-title">' + esc(q.title) + '</div><div class="qc-num">' + q.num + '</div><div class="qc-sub">' + esc(q.sub) + '</div></div>').join("");
+        { sec: "events", title: "事件分支", num: rw.eventChoices.length, sub: "lost / get 结局" }
+      ].map((q) => '<div class="quick-card" data-sec="' + q.sec + '"><div class="qc-title">' + esc(q.title) + '</div><div class="qc-num">' + q.num + '</div><div class="qc-sub">' + esc(q.sub) + '</div></div>').join("");
       document.querySelectorAll("#quickGrid .quick-card").forEach((el) => {
         el.onclick = () => {
           if (el.dataset.cat) { spellCat = el.dataset.cat; spellBand = "全部"; spellPage = 0; }
@@ -929,12 +989,14 @@
       });
 
       document.getElementById("statsGrid").innerHTML = [
-        ["技能总数", SPELLS.length],
-        ["山河图专属", ROGUE_SPELLS.length],
-        ["武将收录", GENERALS.length],
-        ["历史局(合并后)", RUNS.length],
-        ["当局城池", (arch.cities || []).length],
-        ["商店条目", rw.shops.length || "—"]
+        ["技能", SPELLS.length],
+        ["武将", GENERALS.length],
+        ["商店", rw.shops.length],
+        ["城池", rw.mapCities.length],
+        ["关卡", rw.fights.length],
+        ["事件分支", rw.eventChoices.length],
+        ["关卡技能关联", fightSkillLinks],
+        ["武将技能关联", linkedGens]
       ].map(([l, v]) => '<div class="stat-card"><div class="label">' + esc(l) + '</div><div class="value">' + v + '</div></div>').join("");
 
       const maxCat = Math.max(...Object.values(cats), 1);
@@ -1051,7 +1113,11 @@
         ? slice.map((s) => '<tr class="spell-row' + (selectedSpellId === s.id ? " selected" : "") + '" data-id="' + s.id + '"><td class="id-col">' + s.id + '</td><td><span class="tag">' + esc(s.category) + '</span></td><td>' + esc(s.name || "—") + '</td><td>' + ownersHtml(s.id) + '</td><td class="desc">' + esc(descPreview(s.desc, 80)) + '</td></tr>').join("")
         : '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:32px">无匹配技能</td></tr>';
       document.querySelectorAll("#spellBody .owner-link").forEach((el) => {
-        el.onclick = (ev) => { ev.stopPropagation(); gotoGeneral(el.dataset.gotoGeneral); };
+        el.onclick = (ev) => {
+          ev.stopPropagation();
+          if (el.dataset.gotoFight) gotoFight(el.dataset.gotoFight);
+          else if (el.dataset.gotoGeneral) gotoGeneral(el.dataset.gotoGeneral);
+        };
       });
       document.querySelectorAll("#spellBody .spell-row").forEach((row) => {
         row.onclick = () => {
@@ -1080,10 +1146,11 @@
     function renderGenerals() {
       const linked = Object.keys(GENERAL_SKILLS).filter((k) => (GENERAL_SKILLS[k] || []).length).length;
       const noticeEl = document.getElementById("generalNotice");
-      if (!linked) {
-        noticeEl.innerHTML = '<div class="notice">本份数据有 <b>' + GENERALS.length + '</b> 名武将姓名，可作 ID 对照查询。武将技能关联（generalSkills）需新版脚本重新导出后才有。</div>';
+      const fightLinks = Object.keys(FIGHT_SKILLS).length;
+      if (!fightLinks && !linked) {
+        noticeEl.innerHTML = '<div class="notice warn">暂无技能关联数据。</div>';
       } else {
-        noticeEl.innerHTML = '<div class="notice">已关联 ' + linked + ' 名武将的技能。点击技能标签可跳转到技能库。</div>';
+        noticeEl.innerHTML = '<div class="notice">武将技能关联 <b>' + linked + '</b> 名；关卡敌将技能 <b>' + fightLinks + '</b> 关。技能页可查看「关联武将/关卡」，关卡页可点行看敌将技能。</div>';
       }
       const list = filteredGenerals();
       const letters = { "全部": list.length };
@@ -1190,7 +1257,7 @@
       const el = document.getElementById("worldNotice");
       if (!el) return;
       if (hasRogueWorld()) {
-        el.innerHTML = '<div class="notice">已加载 rogueWorld 世界数据。商店来自 Rplot，城池/关卡/事件来自 Rcity、Rfight、Rchoose 与 rogejson。</div>';
+        el.innerHTML = '<div class="notice">已加载完整 rogueWorld：商店 ' + ROGUE_WORLD.shops.length + '、城池 ' + ROGUE_WORLD.mapCities.length + '、关卡 ' + ROGUE_WORLD.fights.length + '、事件 ' + ROGUE_WORLD.eventChoices.length + '。generalSkills 已关联关卡敌将技能。</div>';
       } else {
         el.innerHTML = '<div class="notice warn">当前 JSON 没有 rogueWorld 数据。请更新幽灵山庄小抄后，在游戏内进入山河图，点「山河图数据」重新导出（需先加载过山河图 zip）。</div>';
       }
@@ -1223,8 +1290,14 @@
       if (shopPage >= pages) shopPage = pages - 1;
       const slice = list.slice(shopPage * PAGE, (shopPage + 1) * PAGE);
       document.getElementById("shopBody").innerHTML = slice.length
-        ? slice.map((s) => '<tr><td class="id-col">' + esc(s.id) + '</td><td><span class="tag">' + esc(s.category || "—") + '</span></td><td>' + esc(s.name || "—") + '</td><td>' + esc(s.money != null ? s.money : "—") + '</td><td>' + esc(s.level != null ? s.level : "—") + '</td><td class="desc">' + esc(s.desc || "") + '</td></tr>').join("")
-        : '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:32px">暂无商店数据</td></tr>';
+        ? slice.map((s) => {
+            const spellLink = s.spellid ? '<span class="owner-link" data-goto-spell="' + s.spellid + '">' + s.spellid + "</span>" : "—";
+            return '<tr><td class="id-col">' + esc(s.id) + '</td><td><span class="tag">' + esc(s.category || "—") + '</span></td><td>' + esc(s.name || "—") + '</td><td>' + esc(s.money != null ? s.money : "—") + '</td><td>' + esc(s.level != null ? s.level : "—") + '</td><td>' + spellLink + '</td><td class="desc">' + esc(s.desc || "") + '</td></tr>';
+          }).join("")
+        : '<tr><td colspan="7" style="text-align:center;color:var(--muted);padding:32px">暂无商店数据</td></tr>';
+      document.querySelectorAll("#shopBody .owner-link[data-goto-spell]").forEach((el) => {
+        el.onclick = (ev) => { ev.stopPropagation(); gotoSpell(el.dataset.gotoSpell); };
+      });
       renderPager("shopPager", shopPage, pages, "shopPrev", "shopNext", (p) => { shopPage = p; renderShops(); });
     }
 
@@ -1240,24 +1313,61 @@
       if (cityPage >= pages) cityPage = pages - 1;
       const slice = list.slice(cityPage * PAGE, (cityPage + 1) * PAGE);
       document.getElementById("cityBody").innerHTML = slice.length
-        ? slice.map((c) => '<tr><td class="id-col">' + esc(c.id) + '</td><td><b>' + esc(c.name || "—") + '</b></td><td>' + esc(c.chapter || "—") + '</td><td>' + (c.boss ? '<span class="tag">Boss</span>' : "—") + '</td><td class="desc">' + esc(c.desc || "") + '</td></tr>').join("")
-        : '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:32px">暂无城池数据</td></tr>';
+        ? slice.map((c) => '<tr><td class="id-col">' + esc(c.id) + '</td><td><b>' + esc(c.name || "—") + '</b></td><td class="id-col">' + esc((c.x != null && c.y != null) ? (c.x + "," + c.y) : "—") + '</td><td>' + (c.boss ? '<span class="tag">Boss</span>' : "—") + '</td><td class="id-col">' + esc(c.spell != null ? c.spell : "—") + '</td><td class="desc">' + esc(c.desc || c.chapter || "") + '</td></tr>').join("")
+        : '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:32px">暂无城池数据</td></tr>';
       renderPager("cityPager", cityPage, pages, "cityPrev", "cityNext", (p) => { cityPage = p; renderCities(); });
+    }
+
+    function showFightDetail(fight) {
+      const panel = document.getElementById("fightDetail");
+      if (!panel || !fight) {
+        if (panel) { panel.className = "detail-panel empty"; panel.textContent = "点击关卡查看敌将技能"; }
+        return;
+      }
+      const skills = getFightSkills(fight.id);
+      panel.className = "detail-panel";
+      panel.innerHTML =
+        '<h3>' + esc(fight.name || "关卡#" + fight.id) + '</h3>' +
+        '<div class="meta-line">ID <span class="id-col">' + fight.id + '</span> · 敌将数 ' + esc(fight.generalsCount != null ? fight.generalsCount : "—") + ' · 奖励 <span class="id-col">' + esc(fight.reward || "—") + '</span></div>' +
+        (fight.desc ? '<div class="full-desc" style="margin-bottom:12px">' + esc(fight.desc) + '</div>' : '') +
+        '<div class="meta-line">敌将技能 (' + skills.length + ')</div>' +
+        '<div style="margin-top:8px">' + skillPillsHtml(skills, true) + '</div>';
+      panel.querySelectorAll(".skill-pill.clickable").forEach((el) => {
+        el.onclick = () => gotoSpell(el.dataset.skillId);
+      });
     }
 
     function renderFights() {
       const kw = (document.getElementById("fightSearch").value || "").trim().toLowerCase();
       const list = ROGUE_WORLD.fights.filter((f) => {
         if (!kw) return true;
-        return [f.id, f.name, f.desc, f.reward].join(" ").toLowerCase().includes(kw);
+        const skillTxt = getFightSkills(f.id).map((s) => (s.name || "") + s.id).join(" ").toLowerCase();
+        return [f.id, f.name, f.desc, f.reward, skillTxt].join(" ").toLowerCase().includes(kw);
       });
       const pages = Math.max(1, Math.ceil(list.length / PAGE));
       if (fightPage >= pages) fightPage = pages - 1;
       const slice = list.slice(fightPage * PAGE, (fightPage + 1) * PAGE);
+      if (selectedFightId != null && !list.some((f) => String(f.id) === selectedFightId)) selectedFightId = null;
       document.getElementById("fightBody").innerHTML = slice.length
-        ? slice.map((f) => '<tr><td class="id-col">' + esc(f.id) + '</td><td><b>' + esc(f.name || "—") + '</b></td><td>' + esc(f.generalsCount != null ? f.generalsCount : "—") + '</td><td class="desc">' + esc(f.desc || "") + '</td><td class="desc">' + esc(f.reward || "") + '</td></tr>').join("")
+        ? slice.map((f) => {
+            const skills = getFightSkills(f.id);
+            const preview = skills.length <= 2 ? skillPillsHtml(skills, true) : skillPillsHtml(skills.slice(0, 1), true) + '<span style="color:var(--muted);font-size:11px"> +' + (skills.length - 1) + '</span>';
+            return '<tr class="spell-row' + (selectedFightId === String(f.id) ? " selected" : "") + '" data-fid="' + f.id + '"><td class="id-col">' + esc(f.id) + '</td><td><b>' + esc(f.name || "—") + '</b></td><td>' + esc(f.generalsCount != null ? f.generalsCount : "—") + '</td><td class="id-col">' + esc(f.reward || "—") + '</td><td>' + preview + '</td></tr>';
+          }).join("")
         : '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:32px">暂无关卡数据</td></tr>';
-      renderPager("fightPager", fightPage, pages, "fightPrev", "fightNext", (p) => { fightPage = p; renderFights(); });
+      document.querySelectorAll("#fightBody .spell-row").forEach((row) => {
+        row.onclick = (ev) => {
+          if (ev.target.closest(".skill-pill")) return;
+          selectedFightId = String(row.dataset.fid);
+          showFightDetail(FIGHT_BY_ID[selectedFightId]);
+          renderFights();
+        };
+      });
+      document.querySelectorAll("#fightBody .skill-pill.clickable").forEach((el) => {
+        el.onclick = (ev) => { ev.stopPropagation(); gotoSpell(el.dataset.skillId); };
+      });
+      if (selectedFightId) showFightDetail(FIGHT_BY_ID[selectedFightId]);
+      renderPager("fightPager", fightPage, pages, "fightPrev", "fightNext", (p) => { fightPage = p; renderFights(); }, "共 " + list.length + " 关");
     }
 
     function allEventRows() {
@@ -1317,12 +1427,28 @@
       if (!kw || !RAW) return;
       const spellHit = SPELLS.find((s) => String(s.id) === kw || (s.name || "").toLowerCase() === kw || (s.name || "").toLowerCase().includes(kw));
       if (spellHit) { gotoSpell(spellHit.id); return; }
+      const fightHit = ROGUE_WORLD.fights.find((f) => (f.name || "").toLowerCase().includes(kw) || String(f.id) === kw);
+      if (fightHit) { gotoFight(fightHit.id); return; }
+      const cityHit = ROGUE_WORLD.mapCities.find((c) => (c.name || "").toLowerCase().includes(kw));
+      if (cityHit) {
+        navigateSection("cities");
+        document.getElementById("citySearch").value = cityHit.name || String(cityHit.id);
+        cityPage = 0; renderCities();
+        return;
+      }
       const genHit = GENERALS.find((g) => String(g.id) === kw || g.name.toLowerCase().includes(kw));
       if (genHit) {
         document.getElementById("generalSearch").value = genHit.name;
         generalPage = 0;
         navigateSection("generals");
         renderGenerals();
+        return;
+      }
+      const shopHit = ROGUE_WORLD.shops.find((s) => (s.name || "").toLowerCase().includes(kw));
+      if (shopHit) {
+        navigateSection("shops");
+        document.getElementById("shopSearch").value = shopHit.name || kw;
+        shopPage = 0; renderShops();
         return;
       }
       document.getElementById("spellSearch").value = kw;

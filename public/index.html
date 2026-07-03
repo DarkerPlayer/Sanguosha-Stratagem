@@ -1,0 +1,1415 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>山河图数据库 · 幽灵山庄</title>
+  <style>
+    :root {
+      --bg: #0b1628;
+      --panel: #0f2744;
+      --panel2: #132d4f;
+      --border: #2a4a6e;
+      --accent: #7ec8e3;
+      --accent2: #5aa8c8;
+      --text: #e8f4fc;
+      --muted: #8fb3cc;
+      --chip: #1a3a5c;
+      --good: #4ade80;
+      --warn: #fbbf24;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: -apple-system, BlinkMacSystemFont, "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+    }
+    .app { display: flex; flex-direction: column; min-height: 100vh; }
+    .body-row { display: flex; flex: 1; min-height: 0; }
+    .sidebar {
+      width: 220px;
+      flex-shrink: 0;
+      background: var(--panel);
+      border-right: 1px solid var(--border);
+      padding: 16px 12px;
+      position: sticky;
+      top: 0;
+      height: calc(100vh - 52px);
+      overflow-y: auto;
+    }
+    .logo { font-size: 15px; font-weight: 700; color: var(--accent); margin-bottom: 4px; }
+    .logo-sub { font-size: 11px; color: var(--muted); margin-bottom: 20px; }
+    .nav-btn {
+      display: block;
+      width: 100%;
+      text-align: left;
+      padding: 10px 12px;
+      margin-bottom: 4px;
+      border: 1px solid transparent;
+      border-radius: 8px;
+      background: transparent;
+      color: var(--text);
+      cursor: pointer;
+      font-size: 13px;
+    }
+    .nav-btn:hover { background: var(--panel2); border-color: var(--border); }
+    .nav-btn.active { background: var(--chip); border-color: var(--accent2); color: var(--accent); }
+    .nav-count { float: right; color: var(--muted); font-size: 11px; }
+    .main { flex: 1; padding: 20px 24px 40px; overflow-x: hidden; }
+    .section { display: none; }
+    .section.active { display: block; }
+    h1 { font-size: 22px; margin: 0 0 6px; color: var(--accent); }
+    .subtitle { color: var(--muted); font-size: 13px; margin-bottom: 20px; }
+    .toolbar {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 10px;
+      align-items: center;
+      margin-bottom: 16px;
+      padding: 12px 14px;
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+    }
+    input[type="text"], input[type="search"], select {
+      padding: 8px 12px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--bg);
+      color: var(--text);
+      font-size: 13px;
+      min-width: 200px;
+    }
+    button {
+      padding: 8px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--accent2);
+      background: var(--chip);
+      color: var(--accent);
+      cursor: pointer;
+      font-size: 13px;
+    }
+    button:hover { background: var(--panel2); }
+    button.primary { background: var(--accent2); color: #0b1628; border-color: var(--accent); font-weight: 600; }
+    .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    .chip {
+      padding: 6px 12px;
+      border-radius: 20px;
+      border: 1px solid var(--border);
+      background: var(--panel);
+      color: var(--muted);
+      cursor: pointer;
+      font-size: 12px;
+      user-select: none;
+    }
+    .chip.active { border-color: var(--accent); color: var(--accent); background: var(--chip); }
+    .chip b { color: var(--text); margin-left: 4px; }
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+      gap: 12px;
+      margin-bottom: 20px;
+    }
+    .stat-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+    }
+    .stat-card .label { font-size: 12px; color: var(--muted); }
+    .stat-card .value { font-size: 26px; font-weight: 700; color: var(--accent); margin-top: 4px; }
+    .table-wrap {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      overflow: auto;
+      max-height: calc(100vh - 220px);
+    }
+    table { width: 100%; border-collapse: collapse; font-size: 13px; }
+    th, td { padding: 10px 14px; text-align: left; border-bottom: 1px solid var(--border); vertical-align: top; }
+    th { position: sticky; top: 0; background: var(--panel2); color: var(--muted); font-size: 12px; z-index: 2; }
+    tr:hover td { background: rgba(126, 200, 227, 0.06); }
+    .id-col { color: var(--accent2); font-variant-numeric: tabular-nums; white-space: nowrap; }
+    .desc { color: var(--muted); font-size: 12px; line-height: 1.5; max-width: 520px; }
+    .tag {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      background: var(--chip);
+      color: var(--accent);
+      border: 1px solid var(--border);
+      margin-right: 4px;
+    }
+    .pager { display: flex; gap: 8px; align-items: center; margin-top: 12px; color: var(--muted); font-size: 13px; }
+    .dropzone {
+      border: 2px dashed var(--border);
+      border-radius: 12px;
+      padding: 48px 24px;
+      text-align: center;
+      color: var(--muted);
+      background: var(--panel);
+      margin: 40px auto;
+      max-width: 520px;
+    }
+    .dropzone.drag { border-color: var(--accent); color: var(--accent); }
+    .dropzone h2 { color: var(--accent); margin: 0 0 8px; font-size: 18px; }
+    .hidden { display: none !important; }
+    .run-card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin-bottom: 10px;
+    }
+    .run-card .meta { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+    .skill-pill {
+      display: inline-block;
+      padding: 4px 10px;
+      margin: 3px 4px 3px 0;
+      border-radius: 6px;
+      background: var(--bg);
+      border: 1px solid var(--border);
+      font-size: 12px;
+    }
+    .bar-row { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; font-size: 12px; }
+    .bar-label { width: 100px; color: var(--muted); flex-shrink: 0; }
+    .bar-track { flex: 1; height: 8px; background: var(--bg); border-radius: 4px; overflow: hidden; }
+    .bar-fill { height: 100%; background: var(--accent2); border-radius: 4px; }
+    .bar-num { width: 40px; text-align: right; color: var(--muted); }
+    .notice {
+      padding: 10px 14px;
+      border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--panel2);
+      color: var(--muted);
+      font-size: 13px;
+      margin-bottom: 14px;
+      line-height: 1.5;
+    }
+    .notice.warn { border-color: #c9a227; color: #e8d48a; }
+    .skill-pill.clickable { cursor: pointer; }
+    .skill-pill.clickable:hover { border-color: var(--accent); color: var(--accent); }
+    .gen-row { cursor: pointer; }
+    .gen-detail td { background: rgba(126, 200, 227, 0.04); padding: 12px 14px 14px 24px; }
+    .owner-link { color: var(--accent2); cursor: pointer; font-size: 12px; margin-right: 6px; }
+    .owner-link:hover { text-decoration: underline; }
+    .topbar {
+      display: flex; flex-wrap: wrap; gap: 12px; align-items: center;
+      padding: 10px 24px; background: var(--panel); border-bottom: 1px solid var(--border);
+      position: sticky; top: 0; z-index: 30;
+    }
+    .topbar .file-tag { font-size: 12px; color: var(--muted); }
+    .topbar .file-tag b { color: var(--accent); }
+    #globalSearch { flex: 1; min-width: 240px; max-width: 480px; }
+    .quick-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+      gap: 12px; margin-bottom: 24px;
+    }
+    .quick-card {
+      background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+      padding: 16px; cursor: pointer; transition: border-color .15s, background .15s;
+    }
+    .quick-card:hover { border-color: var(--accent2); background: var(--panel2); }
+    .quick-card .qc-title { font-size: 14px; font-weight: 600; color: var(--accent); margin-bottom: 4px; }
+    .quick-card .qc-num { font-size: 28px; font-weight: 700; color: var(--text); }
+    .quick-card .qc-sub { font-size: 12px; color: var(--muted); margin-top: 4px; }
+    .split-layout { display: flex; gap: 16px; align-items: stretch; }
+    .split-list { flex: 1; min-width: 0; }
+    .detail-panel {
+      width: 340px; flex-shrink: 0; background: var(--panel);
+      border: 1px solid var(--border); border-radius: 10px;
+      padding: 16px; position: sticky; top: 80px; max-height: calc(100vh - 100px);
+      overflow-y: auto;
+    }
+    .detail-panel.empty { display: flex; align-items: center; justify-content: center; color: var(--muted); font-size: 13px; min-height: 200px; }
+    .detail-panel h3 { margin: 0 0 8px; font-size: 18px; color: var(--accent); }
+    .detail-panel .meta-line { font-size: 12px; color: var(--muted); margin-bottom: 12px; }
+    .detail-panel .full-desc { font-size: 13px; line-height: 1.7; color: var(--text); white-space: pre-wrap; word-break: break-word; }
+    .detail-actions { display: flex; gap: 8px; margin-top: 14px; flex-wrap: wrap; }
+    .detail-actions button { font-size: 12px; padding: 6px 10px; }
+    tr.spell-row { cursor: pointer; }
+    tr.spell-row.selected td { background: rgba(126, 200, 227, 0.12) !important; }
+    .band-chips { margin-bottom: 12px; }
+    .nav-btn.dim { opacity: .45; }
+    .nav-btn.dim .nav-count { color: var(--warn); }
+    .health-list { display: flex; flex-direction: column; gap: 8px; margin-bottom: 20px; }
+    .health-item {
+      display: flex; align-items: center; gap: 10px; padding: 10px 14px;
+      background: var(--panel); border: 1px solid var(--border); border-radius: 8px; font-size: 13px;
+    }
+    .health-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .health-dot.ok { background: var(--good); }
+    .health-dot.warn { background: var(--warn); }
+    .health-dot.miss { background: #64748b; }
+    .gen-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+      gap: 8px; margin-bottom: 16px;
+    }
+    .gen-card {
+      padding: 10px 12px; background: var(--panel); border: 1px solid var(--border);
+      border-radius: 8px; cursor: pointer; font-size: 13px;
+    }
+    .gen-card:hover { border-color: var(--accent2); }
+    .gen-card .gid { font-size: 11px; color: var(--muted); }
+    .letter-bar { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 14px; }
+    .letter-bar .chip { padding: 4px 10px; font-size: 12px; }
+    .feedback-form textarea {
+      width: 100%; min-height: 120px; padding: 10px 12px; border-radius: 8px;
+      border: 1px solid var(--border); background: var(--bg); color: var(--text);
+      font-size: 13px; font-family: inherit; resize: vertical;
+    }
+    .feedback-form .field { margin-bottom: 12px; }
+    .feedback-form label { display: block; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+    .feedback-list { display: flex; flex-direction: column; gap: 10px; }
+    .feedback-item {
+      background: var(--panel); border: 1px solid var(--border); border-radius: 10px;
+      padding: 12px 14px;
+    }
+    .feedback-item .fi-meta { font-size: 12px; color: var(--muted); margin-bottom: 8px; }
+    .feedback-item .fi-msg { font-size: 13px; line-height: 1.6; white-space: pre-wrap; word-break: break-word; }
+    .feedback-status { font-size: 13px; margin-top: 10px; min-height: 20px; }
+    .feedback-status.ok { color: var(--good); }
+    .feedback-status.err { color: #f87171; }
+    .loader-spin { margin: 16px auto; width: 28px; height: 28px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    @media (max-width: 1100px) {
+      .detail-panel { display: none; }
+    }
+    @media (max-width: 768px) {
+      .body-row { flex-direction: column; }
+      .sidebar { width: 100%; height: auto; position: static; }
+    }
+  </style>
+</head>
+<body>
+  <div id="loader" class="dropzone">
+    <h2>山河图数据库</h2>
+    <div class="loader-spin"></div>
+    <p id="loaderText">正在加载档案数据…</p>
+    <p style="font-size:12px;margin-top:12px;color:var(--muted)">山河图数据_2026-07-03 copy.json</p>
+  </div>
+
+  <div id="app" class="app hidden">
+    <div class="topbar">
+      <span class="file-tag" id="fileTag">已加载 <b>—</b></span>
+      <input type="search" id="globalSearch" placeholder="全局搜索技能名、武将、描述… (回车跳转)" />
+      <button type="button" id="exportFilterBtn" class="primary">导出当前筛选</button>
+    </div>
+    <div class="body-row">
+    <aside class="sidebar">
+      <div class="logo">山河图数据库</div>
+      <div class="logo-sub">幽灵山庄 · 本地档案</div>
+      <button class="nav-btn active" data-section="overview">总览</button>
+      <button class="nav-btn" data-section="roguemap">山河图专属 <span class="nav-count" id="navRogueMap">0</span></button>
+      <button class="nav-btn" data-section="spells">全技能库 <span class="nav-count" id="navSpells">0</span></button>
+      <button class="nav-btn" data-section="generals">武将 <span class="nav-count" id="navGenerals">0</span></button>
+      <button class="nav-btn" data-section="runs">历史局 <span class="nav-count" id="navRuns">0</span></button>
+      <button class="nav-btn" data-section="current">当前局</button>
+      <hr style="border:none;border-top:1px solid var(--border);margin:16px 0" />
+      <div style="font-size:11px;color:var(--muted);margin-bottom:8px;padding:0 4px">山河图世界数据</div>
+      <button class="nav-btn" data-section="shops">商店 <span class="nav-count" id="navShops">0</span></button>
+      <button class="nav-btn" data-section="cities">地图城池 <span class="nav-count" id="navCities">0</span></button>
+      <button class="nav-btn" data-section="fights">战斗关卡 <span class="nav-count" id="navFights">0</span></button>
+      <button class="nav-btn" data-section="events">事件/结局 <span class="nav-count" id="navEvents">0</span></button>
+      <button class="nav-btn" data-section="schools">学派天赋 <span class="nav-count" id="navSchools">0</span></button>
+      <hr style="border:none;border-top:1px solid var(--border);margin:16px 0" />
+      <button class="nav-btn" data-section="feedback">访客反馈 <span class="nav-count" id="navFeedback">0</span></button>
+    </aside>
+
+    <main class="main">
+      <section id="sec-overview" class="section active">
+        <h1>数据总览</h1>
+        <p class="subtitle" id="metaLine">—</p>
+        <div id="healthBox" class="health-list"></div>
+        <div class="quick-grid" id="quickGrid"></div>
+        <div class="stats-grid" id="statsGrid"></div>
+        <h2 style="font-size:15px;color:var(--accent);margin:24px 0 12px">技能分类分布</h2>
+        <div id="categoryBars"></div>
+        <h2 style="font-size:15px;color:var(--accent);margin:24px 0 12px">ID 区间分布（点击可跳转筛选）</h2>
+        <div id="idBands"></div>
+      </section>
+
+      <section id="sec-roguemap" class="section">
+        <h1>山河图专属</h1>
+        <p class="subtitle">ID 3000–4999 区间，装备形、战法、山河图模式技能等 — 本份数据的主力内容</p>
+        <div class="toolbar">
+          <input type="search" id="rogueSearch" placeholder="搜索名称或描述…" />
+          <select id="rogueSort">
+            <option value="id-asc">ID 升序</option>
+            <option value="id-desc">ID 降序</option>
+            <option value="name">名称</option>
+          </select>
+        </div>
+        <div class="split-layout">
+          <div class="split-list">
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th width="72">ID</th><th width="120">名称</th><th>描述摘要</th></tr></thead>
+                <tbody id="rogueBody"></tbody>
+              </table>
+            </div>
+            <div class="pager" id="roguePager"></div>
+          </div>
+          <div class="detail-panel empty" id="rogueDetail">点击左侧条目查看完整描述</div>
+        </div>
+      </section>
+
+      <section id="sec-spells" class="section">
+        <h1>全技能库</h1>
+        <p class="subtitle">3027 条完整技能；点击行在右侧查看详情，支持 ID 区间筛选</p>
+        <div class="toolbar">
+          <input type="search" id="spellSearch" placeholder="搜索技能、武将…" />
+          <select id="spellSort">
+            <option value="id-asc">ID 升序</option>
+            <option value="id-desc">ID 降序</option>
+            <option value="name">名称</option>
+          </select>
+        </div>
+        <div class="chips band-chips" id="bandChips"></div>
+        <div class="chips" id="spellChips"></div>
+        <div class="split-layout">
+          <div class="split-list">
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th width="72">ID</th><th width="90">分类</th><th width="120">名称</th><th width="140">所属武将</th><th>描述摘要</th></tr></thead>
+                <tbody id="spellBody"></tbody>
+              </table>
+            </div>
+            <div class="pager" id="spellPager"></div>
+          </div>
+          <div class="detail-panel empty" id="spellDetail">点击左侧技能查看完整描述</div>
+        </div>
+      </section>
+
+      <section id="sec-generals" class="section">
+        <h1>武将图鉴</h1>
+        <p class="subtitle">1604 名武将姓名索引；可按姓氏分组浏览</p>
+        <div id="generalNotice"></div>
+        <div class="toolbar">
+          <input type="search" id="generalSearch" placeholder="搜索武将名、ID 或技能名…" />
+          <label style="font-size:13px;color:var(--muted)">
+            <input type="checkbox" id="generalOnlyWithSkills" /> 仅显示有技能关联的武将
+          </label>
+          <select id="generalView">
+            <option value="table">表格视图</option>
+            <option value="grid">卡片视图</option>
+          </select>
+        </div>
+        <div class="letter-bar" id="letterBar"></div>
+        <div class="gen-grid hidden" id="generalGrid"></div>
+        <div class="table-wrap" id="generalTableWrap">
+          <table>
+            <thead><tr><th width="80">ID</th><th>武将名</th><th width="100">技能数</th><th>技能列表</th></tr></thead>
+            <tbody id="generalBody"></tbody>
+          </table>
+        </div>
+        <div class="pager" id="generalPager"></div>
+      </section>
+
+      <section id="sec-runs" class="section">
+        <h1>历史局</h1>
+        <p class="subtitle">已合并短时间内的重复记录，可筛选有效对局</p>
+        <div class="toolbar">
+          <label style="font-size:13px;color:var(--muted)">
+            <input type="checkbox" id="runsOnlyValid" checked /> 仅显示有武将或技能的记录
+          </label>
+          <input type="search" id="runSearch" placeholder="搜索武将名…" />
+        </div>
+        <div id="runsList"></div>
+        <div class="pager" id="runsPager"></div>
+      </section>
+
+      <section id="sec-current" class="section">
+        <h1>当前局快照</h1>
+        <p class="subtitle">导出时的当局状态</p>
+        <div id="currentBox"></div>
+      </section>
+
+      <section id="sec-shops" class="section">
+        <h1>山河图商店</h1>
+        <p class="subtitle">来自 Rplot / rogejson，含剧情战法、技能、手牌、装备等可兑换条目</p>
+        <div id="worldNotice"></div>
+        <div class="toolbar">
+          <input type="search" id="shopSearch" placeholder="搜索名称、分类、描述…" />
+          <select id="shopCatFilter"><option value="">全部分类</option></select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th width="60">ID</th><th width="90">分类</th><th width="140">名称</th><th width="70">价格</th><th width="60">等级</th><th>描述</th></tr></thead>
+            <tbody id="shopBody"></tbody>
+          </table>
+        </div>
+        <div class="pager" id="shopPager"></div>
+      </section>
+
+      <section id="sec-cities" class="section">
+        <h1>地图城池</h1>
+        <p class="subtitle">Rcity 静态数据：城池名、章节、场景描述</p>
+        <div class="toolbar">
+          <input type="search" id="citySearch" placeholder="搜索城池名、章节、描述…" />
+          <label style="font-size:13px;color:var(--muted)"><input type="checkbox" id="cityBossOnly" /> 仅 Boss 城</label>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th width="60">ID</th><th width="120">名称</th><th width="80">章节</th><th width="50">Boss</th><th>场景描述</th></tr></thead>
+            <tbody id="cityBody"></tbody>
+          </table>
+        </div>
+        <div class="pager" id="cityPager"></div>
+      </section>
+
+      <section id="sec-fights" class="section">
+        <h1>战斗关卡</h1>
+        <p class="subtitle">Rfight 关卡介绍、奖励与敌将数量</p>
+        <div class="toolbar">
+          <input type="search" id="fightSearch" placeholder="搜索关卡名、描述、奖励…" />
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th width="60">ID</th><th width="140">名称</th><th width="70">敌将</th><th>关卡介绍</th><th width="160">奖励</th></tr></thead>
+            <tbody id="fightBody"></tbody>
+          </table>
+        </div>
+        <div class="pager" id="fightPager"></div>
+      </section>
+
+      <section id="sec-events" class="section">
+        <h1>事件与结局分支</h1>
+        <p class="subtitle">Rchoose 选项（lost/get）及 rogejson 章节事件</p>
+        <div class="toolbar">
+          <input type="search" id="eventSearch" placeholder="搜索选项、战斗、事件…" />
+          <select id="eventTypeFilter">
+            <option value="">全部类型</option>
+            <option value="choice">分支选项</option>
+            <option value="chapter">章节事件</option>
+          </select>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th width="60">ID</th><th width="80">类型</th><th width="120">关联战斗</th><th>失去/代价</th><th>获得/结局</th></tr></thead>
+            <tbody id="eventBody"></tbody>
+          </table>
+        </div>
+        <div class="pager" id="eventPager"></div>
+      </section>
+
+      <section id="sec-schools" class="section">
+        <h1>学派与天赋</h1>
+        <p class="subtitle">rogejson 中的学派需求与天赋树节点</p>
+        <div class="toolbar">
+          <input type="search" id="schoolSearch" placeholder="搜索学派、天赋…" />
+        </div>
+        <h2 style="font-size:15px;color:var(--accent);margin:0 0 12px">学派</h2>
+        <div class="table-wrap" style="max-height:320px;margin-bottom:20px">
+          <table>
+            <thead><tr><th width="80">学派</th><th>需求</th><th>说明</th></tr></thead>
+            <tbody id="schoolBody"></tbody>
+          </table>
+        </div>
+        <h2 style="font-size:15px;color:var(--accent);margin:0 0 12px">天赋</h2>
+        <div class="table-wrap">
+          <table>
+            <thead><tr><th width="80">前置</th><th width="80">消耗</th><th>天赋内容</th></tr></thead>
+            <tbody id="talentBody"></tbody>
+          </table>
+        </div>
+        <div class="pager" id="schoolPager"></div>
+      </section>
+
+      <section id="sec-feedback" class="section">
+        <h1>访客反馈与建议</h1>
+        <p class="subtitle">今日访客可在此留言，每条提交单独保存，所有人可见今日列表</p>
+        <div class="toolbar" style="flex-direction:column;align-items:stretch">
+          <form id="feedbackForm" class="feedback-form">
+            <div class="field">
+              <label for="fbNickname">昵称（可选）</label>
+              <input type="text" id="fbNickname" maxlength="32" placeholder="访客" />
+            </div>
+            <div class="field">
+              <label for="fbMessage">建议 / 反馈 / 纠错</label>
+              <textarea id="fbMessage" maxlength="2000" placeholder="例如：某技能描述有误、希望增加某某筛选、数据缺失说明…" required></textarea>
+            </div>
+            <button type="submit" class="primary">提交反馈</button>
+            <div class="feedback-status" id="feedbackStatus"></div>
+          </form>
+        </div>
+        <h2 style="font-size:15px;color:var(--accent);margin:20px 0 12px">今日留言 <span id="feedbackDayLabel" style="color:var(--muted);font-size:13px"></span></h2>
+        <div class="feedback-list" id="feedbackList"></div>
+      </section>
+    </main>
+    </div>
+  </div>
+
+  <script>
+    const PAGE = 60;
+    const ARCHIVE_URL = "/data/%E5%B1%B1%E6%B2%B3%E5%9B%BE%E6%95%B0%E6%8D%AE_2026-07-03%20copy.json";
+    const ARCHIVE_NAME = "山河图数据_2026-07-03 copy.json";
+    let RAW = null;
+    let SPELLS = [];
+    let GENERALS = [];
+    let RUNS = [];
+    let GENERAL_SKILLS = {};
+    let SKILL_OWNERS = {};
+    let ROGUE_WORLD = { shops: [], mapCities: [], eventChoices: [], fights: [], events: [], schools: [], talents: [] };
+    let ROGUE_SPELLS = [];
+    let expandedGeneral = null;
+    let selectedSpellId = null;
+    let selectedRogueId = null;
+    let spellCat = "全部";
+    let spellBand = "全部";
+    let generalLetter = "全部";
+    let loadedFileName = "";
+    let spellPage = 0;
+    let roguePage = 0;
+    let generalPage = 0;
+    let runsPage = 0;
+    let shopPage = 0;
+    let cityPage = 0;
+    let fightPage = 0;
+    let eventPage = 0;
+    let schoolPage = 0;
+
+    const BASIC_NAMES = /^(杀|闪|桃|酒)$/;
+    const STD_TRICKS = /^(顺手牵羊|过河拆桥|五谷丰登|无中生有|决斗|南蛮入侵|万箭齐发|桃园结义|无懈可击|借刀杀人?|乐不思蜀|闪电|火攻|铁索连环|知己知彼|以逸待劳|远交近攻|调兵遣将|挟天子|清渠|军令状|逐近弃远|调虎离山|水淹七军|逐鹿天下|草船借箭|洞若观火)/;
+
+    function categorizeSpell(s) {
+      const name = s.name || "";
+      const desc = s.desc || "";
+      const id = Number(s.id);
+      if (BASIC_NAMES.test(name)) return "基本牌";
+      if (STD_TRICKS.test(name)) return "标准锦囊";
+      if (/攻击范围|你计算与其他角色|其他角色计算与你的距离|装备区/.test(desc)) return "装备牌";
+      if (/^(诸葛连弩|八卦阵|青釭剑|雌雄双股剑|贯石斧|方天画戟|麒麟弓|朱雀羽扇|丈八蛇矛|寒冰剑|古锭刀|白银狮子|木牛流马|赤兔|大宛|紫騂|绝影|的卢|爪黄飞电)/.test(name)) return "装备牌";
+      if (/出牌阶段.*使用/.test(desc) && !/锁定技/.test(desc) && id < 2500) return "锦囊战法";
+      if (/锁定技|限定技|觉醒技|主公技|阵法技|出牌阶段限一次|当你|你可以|结束阶段|摸牌阶段|弃牌阶段/.test(desc)) return "武将技能";
+      if (id >= 3000) return "山河图专属";
+      if (id >= 1000 && id < 3000) return "扩展技能";
+      return "其他";
+    }
+
+    function idBand(id) {
+      if (id < 100) return "1–99 基础牌";
+      if (id < 500) return "100–499 标准扩展";
+      if (id < 1000) return "500–999";
+      if (id < 3000) return "1000–2999 模式技能";
+      if (id < 5000) return "3000–4999 山河图";
+      if (id < 10000) return "5000–9999";
+      return "10000+ 特殊";
+    }
+
+    function gName(id, generals) {
+      if (id == null) return "—";
+      const g = generals[String(id)] ?? generals[id];
+      if (typeof g === "string") return g;
+      if (g && (g.name || g.n)) return g.name || g.n;
+      return "武将#" + id;
+    }
+
+    function fmtTime(ts) {
+      if (!ts) return "—";
+      try { return new Date(ts).toLocaleString("zh-CN", { hour12: false }); }
+      catch (e) { return String(ts); }
+    }
+
+    function esc(s) {
+      return String(s ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;");
+    }
+
+    function descPreview(desc, n) {
+      const t = String(desc || "").replace(/\s+/g, " ").trim();
+      if (t.length <= (n || 80)) return t;
+      return t.slice(0, n || 80) + "…";
+    }
+
+    function rogueSpells() {
+      return SPELLS.filter((s) => s.id >= 3000 && s.id < 5000);
+    }
+
+    function navigateSection(name) {
+      const btn = document.querySelector('.nav-btn[data-section="' + name + '"]');
+      if (btn) btn.click();
+    }
+
+    function showSpellDetail(spell, panelId) {
+      const panel = document.getElementById(panelId);
+      if (!panel || !spell) {
+        if (panel) { panel.className = "detail-panel empty"; panel.textContent = "点击左侧条目查看完整描述"; }
+        return;
+      }
+      panel.className = "detail-panel";
+      const gens = RAW.archive.generals || {};
+      const owners = (SKILL_OWNERS[String(spell.id)] || []).map((gid) => gName(gid, gens)).join("、") || "—";
+      panel.innerHTML =
+        '<h3>' + esc(spell.name || "技能#" + spell.id) + '</h3>' +
+        '<div class="meta-line">ID <span class="id-col">' + spell.id + '</span> · <span class="tag">' + esc(spell.category) + '</span></div>' +
+        (owners !== "—" ? '<div class="meta-line">所属武将：' + esc(owners) + '</div>' : '') +
+        '<div class="full-desc">' + esc(spell.desc || "（无描述）") + '</div>' +
+        '<div class="detail-actions">' +
+        '<button type="button" id="cpNameBtn">复制名称</button>' +
+        '<button type="button" id="cpIdBtn">复制 ID</button>' +
+        '<button type="button" id="cpDescBtn">复制描述</button>' +
+        '</div>';
+      document.getElementById("cpNameBtn").onclick = () => navigator.clipboard.writeText(spell.name || "");
+      document.getElementById("cpIdBtn").onclick = () => navigator.clipboard.writeText(String(spell.id));
+      document.getElementById("cpDescBtn").onclick = () => navigator.clipboard.writeText(spell.desc || "");
+    }
+
+    function updateWorldNavDim() {
+      const has = hasRogueWorld();
+      ["shops", "cities", "fights", "events", "schools"].forEach((sec) => {
+        const btn = document.querySelector('.nav-btn[data-section="' + sec + '"]');
+        if (btn) btn.classList.toggle("dim", !has);
+      });
+    }
+
+    function generalSurname(name) {
+      return (name || "").charAt(0) || "#";
+    }
+
+    function buildGeneralSkillMaps(arch, runs) {
+      const gs = {};
+      const raw = arch.generalSkills || {};
+      Object.keys(raw).forEach((gid) => {
+        const list = raw[gid];
+        if (!Array.isArray(list)) return;
+        gs[gid] = list.map((s) => ({
+          id: Number(s.id),
+          name: s.name || "",
+          desc: s.desc || "",
+          level: s.level
+        })).filter((s) => !isNaN(s.id));
+      });
+      runs.forEach((r) => {
+        if (!r.generalId || !(r.skills || []).length) return;
+        const key = String(r.generalId);
+        if (!gs[key]) gs[key] = [];
+        const seen = new Set(gs[key].map((x) => x.id));
+        r.skills.forEach((s) => {
+          const id = Number(s.id);
+          if (isNaN(id) || seen.has(id)) return;
+          seen.add(id);
+          gs[key].push({ id, name: s.name || "", desc: s.desc || "" });
+        });
+      });
+      const owners = {};
+      Object.keys(gs).forEach((gid) => {
+        gs[gid].forEach((sk) => {
+          const k = String(sk.id);
+          if (!owners[k]) owners[k] = [];
+          if (!owners[k].includes(gid)) owners[k].push(gid);
+        });
+      });
+      return { gs, owners };
+    }
+
+    function getGeneralSkills(gid) {
+      return GENERAL_SKILLS[String(gid)] || [];
+    }
+
+    function skillPillsHtml(skills, clickable) {
+      if (!skills || !skills.length) return '<span style="color:var(--muted);font-size:12px">—</span>';
+      return skills.map((s) => {
+        const cls = "skill-pill" + (clickable ? " clickable" : "");
+        const lv = s.level != null ? ' <span class="id-col">Lv' + s.level + "</span>" : "";
+        return '<span class="' + cls + '" data-skill-id="' + s.id + '">' + esc(s.name || "技能#" + s.id) + lv + ' <span class="id-col">#' + s.id + "</span></span>";
+      }).join("");
+    }
+
+    function ownersHtml(spellId) {
+      const ids = SKILL_OWNERS[String(spellId)] || [];
+      if (!ids.length) return '<span style="color:var(--muted)">—</span>';
+      const gens = RAW.archive.generals || {};
+      return ids.slice(0, 4).map((gid) => '<span class="owner-link" data-goto-general="' + gid + '">' + esc(gName(gid, gens)) + "</span>").join("") +
+        (ids.length > 4 ? '<span style="color:var(--muted);font-size:12px"> +' + (ids.length - 4) + "</span>" : "");
+    }
+
+    function gotoGeneral(gid) {
+      expandedGeneral = String(gid);
+      document.querySelector('.nav-btn[data-section="generals"]').click();
+      const idx = filteredGenerals().findIndex((g) => String(g.id) === String(gid));
+      if (idx >= 0) generalPage = Math.floor(idx / PAGE);
+      renderGenerals();
+    }
+
+    function gotoSpell(spellId, section) {
+      selectedSpellId = Number(spellId);
+      const sec = section || (selectedSpellId >= 3000 && selectedSpellId < 5000 ? "roguemap" : "spells");
+      navigateSection(sec);
+      if (sec === "roguemap") {
+        document.getElementById("rogueSearch").value = String(spellId);
+        roguePage = 0;
+        renderRogueMap();
+      } else {
+        spellCat = "全部";
+        spellBand = "全部";
+        document.getElementById("spellSearch").value = String(spellId);
+        spellPage = 0;
+        renderBandChips();
+        renderSpellChips();
+        renderSpells();
+      }
+    }
+
+    function mergeRuns(runs) {
+      const out = [];
+      let last = null;
+      for (const r of runs.slice().sort((a, b) => a.at - b.at)) {
+        const key = JSON.stringify({ g: r.generalId, s: r.skillIds || [], l: r.level });
+        if (last && r.at - last.at < 8000 && key === last._key) {
+          last.at = r.at;
+          continue;
+        }
+        const item = Object.assign({}, r, { _key: key });
+        out.push(item);
+        last = item;
+      }
+      return out.reverse();
+    }
+
+    function ingest(data) {
+      RAW = data;
+      const arch = data.archive || {};
+      const spellsObj = arch.spells || {};
+      SPELLS = Object.keys(spellsObj).map((k) => {
+        const s = spellsObj[k];
+        return Object.assign({ id: Number(s.id ?? k) }, s, { category: categorizeSpell(Object.assign({ id: s.id ?? k }, s)) });
+      }).sort((a, b) => a.id - b.id);
+
+      const gens = arch.generals || {};
+      GENERALS = Object.keys(gens).map((k) => ({
+        id: Number(k),
+        name: typeof gens[k] === "string" ? gens[k] : (gens[k]?.name || gens[k]?.n || "武将#" + k)
+      })).sort((a, b) => a.id - b.id);
+
+      RUNS = mergeRuns(arch.runs || []);
+      const maps = buildGeneralSkillMaps(arch, RUNS);
+      GENERAL_SKILLS = maps.gs;
+      SKILL_OWNERS = maps.owners;
+      const rw = arch.rogueWorld || {};
+      ROGUE_WORLD = {
+        shops: rw.shops || [],
+        mapCities: rw.mapCities || [],
+        eventChoices: rw.eventChoices || [],
+        fights: rw.fights || [],
+        events: rw.events || [],
+        schools: rw.schools || [],
+        talents: rw.talents || []
+      };
+
+      ROGUE_SPELLS = rogueSpells();
+
+      document.getElementById("loader").classList.add("hidden");
+      document.getElementById("app").classList.remove("hidden");
+      document.getElementById("navSpells").textContent = SPELLS.length;
+      document.getElementById("navRogueMap").textContent = ROGUE_SPELLS.length;
+      document.getElementById("navGenerals").textContent = GENERALS.length;
+      document.getElementById("navRuns").textContent = RUNS.length;
+      document.getElementById("navShops").textContent = ROGUE_WORLD.shops.length;
+      document.getElementById("navCities").textContent = ROGUE_WORLD.mapCities.length;
+      document.getElementById("navFights").textContent = ROGUE_WORLD.fights.length;
+      document.getElementById("navEvents").textContent = ROGUE_WORLD.eventChoices.length + ROGUE_WORLD.events.length;
+      document.getElementById("navSchools").textContent = ROGUE_WORLD.schools.length + ROGUE_WORLD.talents.length;
+
+      const exported = fmtTime(data.exportedAt);
+      const updated = fmtTime(arch.updatedAt);
+      document.getElementById("metaLine").textContent = "导出时间 " + exported + " · 本地库更新 " + updated;
+      document.getElementById("fileTag").innerHTML = '已加载 <b>' + esc(loadedFileName || "山河图数据.json") + '</b>';
+
+      updateWorldNavDim();
+      renderOverview();
+      renderRogueMap();
+      renderBandChips();
+      renderSpellChips();
+      renderSpells();
+      renderGenerals();
+      renderRuns();
+      renderCurrent();
+      renderWorldNotice();
+      renderShops();
+      renderCities();
+      renderFights();
+      renderEvents();
+      renderSchools();
+      loadFeedback();
+    }
+
+    function fmtFeedbackTime(ts) {
+      try { return new Date(ts).toLocaleString("zh-CN", { hour12: false }); }
+      catch (_e) { return String(ts); }
+    }
+
+    async function loadFeedback() {
+      const listEl = document.getElementById("feedbackList");
+      const dayEl = document.getElementById("feedbackDayLabel");
+      const navEl = document.getElementById("navFeedback");
+      if (!listEl) return;
+      try {
+        const res = await fetch("/api/feedback");
+        const data = await res.json();
+        navEl.textContent = data.count || 0;
+        dayEl.textContent = data.day ? ("· " + data.day) : "";
+        if (!data.items || !data.items.length) {
+          listEl.innerHTML = '<div class="notice">今日还没有留言，欢迎第一个提交建议。</div>';
+          return;
+        }
+        listEl.innerHTML = data.items.map((item) =>
+          '<div class="feedback-item"><div class="fi-meta"><b>' + esc(item.nickname || "访客") + '</b> · ' + fmtFeedbackTime(item.at) + '</div><div class="fi-msg">' + esc(item.message) + '</div></div>'
+        ).join("");
+      } catch (_e) {
+        listEl.innerHTML = '<div class="notice warn">反馈列表加载失败，请稍后刷新。</div>';
+      }
+    }
+
+    async function submitFeedback(ev) {
+      ev.preventDefault();
+      const statusEl = document.getElementById("feedbackStatus");
+      const nickname = document.getElementById("fbNickname").value;
+      const message = document.getElementById("fbMessage").value;
+      statusEl.className = "feedback-status";
+      statusEl.textContent = "提交中…";
+      try {
+        const res = await fetch("/api/feedback", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ nickname, message })
+        });
+        const data = await res.json();
+        if (!res.ok) throw new Error(data.error || "提交失败");
+        document.getElementById("fbMessage").value = "";
+        statusEl.className = "feedback-status ok";
+        statusEl.textContent = "已提交，感谢你的反馈！";
+        loadFeedback();
+      } catch (err) {
+        statusEl.className = "feedback-status err";
+        statusEl.textContent = err.message || "提交失败";
+      }
+    }
+
+    function renderOverview() {
+      const cats = {};
+      const bands = {};
+      SPELLS.forEach((s) => {
+        cats[s.category] = (cats[s.category] || 0) + 1;
+        const b = idBand(s.id);
+        bands[b] = (bands[b] || 0) + 1;
+      });
+      const validRuns = RUNS.filter((r) => r.generalId || (r.skills || []).length);
+      const arch = RAW.archive || {};
+      const linkedGens = Object.keys(GENERAL_SKILLS).filter((k) => (GENERAL_SKILLS[k] || []).length).length;
+      const rw = ROGUE_WORLD;
+      const hasWorld = hasRogueWorld();
+
+      const health = [
+        { ok: SPELLS.length > 0, label: "技能库 " + SPELLS.length + " 条", sub: "其中山河图专属 " + ROGUE_SPELLS.length + " 条" },
+        { ok: GENERALS.length > 0, label: "武将 " + GENERALS.length + " 名", sub: "姓名索引可用" },
+        { ok: linkedGens > 0, warn: !linkedGens, label: linkedGens ? "武将技能关联 " + linkedGens + " 名" : "武将技能关联：未导出", sub: linkedGens ? "" : "需新版脚本重新导出 generalSkills" },
+        { ok: hasWorld, warn: !hasWorld, label: hasWorld ? "世界数据已包含" : "世界数据：未包含", sub: hasWorld ? "商店/城池/关卡/事件" : "rogueWorld 为空，商店/关卡等需重新导出" },
+        { ok: validRuns.length > 0, warn: validRuns.length && !RUNS[0]?.skills?.length, label: "历史局 " + RUNS.length + " 条（合并后）", sub: validRuns.length ? "有效 " + validRuns.length + " 条" : "多为重复点击记录" }
+      ];
+      document.getElementById("healthBox").innerHTML = health.map((h) => {
+        const dot = h.ok && !h.warn ? "ok" : (h.warn ? "warn" : "miss");
+        return '<div class="health-item"><span class="health-dot ' + dot + '"></span><div><div>' + esc(h.label) + '</div><div style="font-size:12px;color:var(--muted)">' + esc(h.sub) + '</div></div></div>';
+      }).join("");
+
+      document.getElementById("quickGrid").innerHTML = [
+        { sec: "roguemap", title: "山河图专属", num: ROGUE_SPELLS.length, sub: "ID 3000–4999" },
+        { sec: "spells", title: "全技能库", num: SPELLS.length, sub: "含标准牌与扩展" },
+        { sec: "generals", title: "武将图鉴", num: GENERALS.length, sub: "按姓浏览" },
+        { sec: "spells", title: "武将技能", num: cats["武将技能"] || 0, sub: "点击后筛选", cat: "武将技能" }
+      ].map((q) => '<div class="quick-card" data-sec="' + q.sec + '"' + (q.cat ? ' data-cat="' + esc(q.cat) + '"' : '') + '><div class="qc-title">' + esc(q.title) + '</div><div class="qc-num">' + q.num + '</div><div class="qc-sub">' + esc(q.sub) + '</div></div>').join("");
+      document.querySelectorAll("#quickGrid .quick-card").forEach((el) => {
+        el.onclick = () => {
+          if (el.dataset.cat) { spellCat = el.dataset.cat; spellBand = "全部"; spellPage = 0; }
+          navigateSection(el.dataset.sec);
+          if (el.dataset.cat) { renderSpellChips(); renderSpells(); }
+        };
+      });
+
+      document.getElementById("statsGrid").innerHTML = [
+        ["技能总数", SPELLS.length],
+        ["山河图专属", ROGUE_SPELLS.length],
+        ["武将收录", GENERALS.length],
+        ["历史局(合并后)", RUNS.length],
+        ["当局城池", (arch.cities || []).length],
+        ["商店条目", rw.shops.length || "—"]
+      ].map(([l, v]) => '<div class="stat-card"><div class="label">' + esc(l) + '</div><div class="value">' + v + '</div></div>').join("");
+
+      const maxCat = Math.max(...Object.values(cats), 1);
+      document.getElementById("categoryBars").innerHTML = Object.entries(cats)
+        .sort((a, b) => b[1] - a[1])
+        .map(([k, v]) => '<div class="bar-row"><span class="bar-label">' + esc(k) + '</span><div class="bar-track"><div class="bar-fill" style="width:' + (v / maxCat * 100) + '%"></div></div><span class="bar-num">' + v + '</span></div>')
+        .join("");
+
+      const maxBand = Math.max(...Object.values(bands), 1);
+      const bandOrder = ["1–99 基础牌", "100–499 标准扩展", "500–999", "1000–2999 模式技能", "3000–4999 山河图", "5000–9999", "10000+ 特殊"];
+      document.getElementById("idBands").innerHTML = Object.entries(bands)
+        .sort((a, b) => bandOrder.indexOf(a[0]) - bandOrder.indexOf(b[0]))
+        .map(([k, v]) => '<div class="bar-row band-jump" data-band="' + esc(k) + '" style="cursor:pointer" title="点击筛选"><span class="bar-label">' + esc(k) + '</span><div class="bar-track"><div class="bar-fill" style="width:' + (v / maxBand * 100) + '%"></div></div><span class="bar-num">' + v + '</span></div>')
+        .join("");
+      document.querySelectorAll("#idBands .band-jump").forEach((el) => {
+        el.onclick = () => {
+          spellBand = el.dataset.band;
+          spellCat = "全部";
+          spellPage = 0;
+          navigateSection(el.dataset.band.includes("山河图") ? "roguemap" : "spells");
+          renderBandChips();
+          renderSpellChips();
+          renderSpells();
+        };
+      });
+    }
+
+    function renderBandChips() {
+      const bands = { "全部": SPELLS.length };
+      SPELLS.forEach((s) => { const b = idBand(s.id); bands[b] = (bands[b] || 0) + 1; });
+      const el = document.getElementById("bandChips");
+      if (!el) return;
+      el.innerHTML = Object.entries(bands)
+        .sort((a, b) => (a[0] === "全部" ? -1 : b[0] === "全部" ? 1 : 0))
+        .map(([k, v]) => '<span class="chip' + (spellBand === k ? " active" : "") + '" data-band="' + esc(k) + '">' + esc(k) + ' <b>' + v + '</b></span>')
+        .join("");
+      el.querySelectorAll(".chip").forEach((c) => {
+        c.onclick = () => { spellBand = c.dataset.band; spellPage = 0; renderBandChips(); renderSpells(); };
+      });
+    }
+
+    function filteredRogueSpells() {
+      const kw = (document.getElementById("rogueSearch").value || "").trim().toLowerCase();
+      const sort = document.getElementById("rogueSort").value;
+      let list = ROGUE_SPELLS.filter((s) => {
+        if (!kw) return true;
+        return String(s.id).includes(kw) || (s.name || "").toLowerCase().includes(kw) || (s.desc || "").toLowerCase().includes(kw);
+      });
+      if (sort === "id-desc") list.sort((a, b) => b.id - a.id);
+      else if (sort === "name") list.sort((a, b) => (a.name || "").localeCompare(b.name || "", "zh"));
+      else list.sort((a, b) => a.id - b.id);
+      return list;
+    }
+
+    function renderRogueMap() {
+      const list = filteredRogueSpells();
+      const pages = Math.max(1, Math.ceil(list.length / PAGE));
+      if (roguePage >= pages) roguePage = pages - 1;
+      const slice = list.slice(roguePage * PAGE, (roguePage + 1) * PAGE);
+      if (selectedRogueId != null && !list.some((s) => s.id === selectedRogueId)) selectedRogueId = null;
+      document.getElementById("rogueBody").innerHTML = slice.length
+        ? slice.map((s) => '<tr class="spell-row' + (selectedRogueId === s.id ? " selected" : "") + '" data-id="' + s.id + '"><td class="id-col">' + s.id + '</td><td><b>' + esc(s.name || "—") + '</b></td><td class="desc">' + esc(descPreview(s.desc, 100)) + '</td></tr>').join("")
+        : '<tr><td colspan="3" style="text-align:center;color:var(--muted);padding:32px">无匹配条目</td></tr>';
+      document.querySelectorAll("#rogueBody .spell-row").forEach((row) => {
+        row.onclick = () => {
+          selectedRogueId = Number(row.dataset.id);
+          const sp = list.find((s) => s.id === selectedRogueId) || SPELLS.find((s) => s.id === selectedRogueId);
+          showSpellDetail(sp, "rogueDetail");
+          renderRogueMap();
+        };
+      });
+      if (selectedRogueId != null) {
+        const sp = SPELLS.find((s) => s.id === selectedRogueId);
+        showSpellDetail(sp, "rogueDetail");
+      }
+      renderPager("roguePager", roguePage, pages, "rgPrev", "rgNext", (p) => { roguePage = p; renderRogueMap(); });
+    }
+
+    function renderSpellChips() {
+      const cats = { "全部": SPELLS.length };
+      SPELLS.forEach((s) => { cats[s.category] = (cats[s.category] || 0) + 1; });
+      document.getElementById("spellChips").innerHTML = Object.entries(cats)
+        .sort((a, b) => (a[0] === "全部" ? -1 : b[0] === "全部" ? 1 : b[1] - a[1]))
+        .map(([k, v]) => '<span class="chip' + (spellCat === k ? " active" : "") + '" data-cat="' + esc(k) + '">' + esc(k) + ' <b>' + v + '</b></span>')
+        .join("");
+      document.querySelectorAll("#spellChips .chip").forEach((el) => {
+        el.onclick = () => { spellCat = el.dataset.cat; spellPage = 0; renderSpellChips(); renderSpells(); };
+      });
+    }
+
+    function filteredSpells() {
+      const kw = (document.getElementById("spellSearch").value || "").trim().toLowerCase();
+      const sort = document.getElementById("spellSort").value;
+      let list = SPELLS.filter((s) => {
+        if (spellCat !== "全部" && s.category !== spellCat) return false;
+        if (spellBand !== "全部" && idBand(s.id) !== spellBand) return false;
+        if (!kw) return true;
+        const ownerTxt = (SKILL_OWNERS[String(s.id)] || []).map((gid) => gName(gid, RAW.archive.generals || {})).join(" ").toLowerCase();
+        return String(s.id).includes(kw) || (s.name || "").toLowerCase().includes(kw) || (s.desc || "").toLowerCase().includes(kw) || ownerTxt.includes(kw);
+      });
+      if (sort === "id-desc") list.sort((a, b) => b.id - a.id);
+      else if (sort === "name") list.sort((a, b) => (a.name || "").localeCompare(b.name || "", "zh"));
+      else list.sort((a, b) => a.id - b.id);
+      return list;
+    }
+
+    function renderSpells() {
+      const list = filteredSpells();
+      const pages = Math.max(1, Math.ceil(list.length / PAGE));
+      if (spellPage >= pages) spellPage = pages - 1;
+      const slice = list.slice(spellPage * PAGE, (spellPage + 1) * PAGE);
+      if (selectedSpellId != null && !list.some((s) => s.id === selectedSpellId)) selectedSpellId = null;
+      document.getElementById("spellBody").innerHTML = slice.length
+        ? slice.map((s) => '<tr class="spell-row' + (selectedSpellId === s.id ? " selected" : "") + '" data-id="' + s.id + '"><td class="id-col">' + s.id + '</td><td><span class="tag">' + esc(s.category) + '</span></td><td>' + esc(s.name || "—") + '</td><td>' + ownersHtml(s.id) + '</td><td class="desc">' + esc(descPreview(s.desc, 80)) + '</td></tr>').join("")
+        : '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:32px">无匹配技能</td></tr>';
+      document.querySelectorAll("#spellBody .owner-link").forEach((el) => {
+        el.onclick = (ev) => { ev.stopPropagation(); gotoGeneral(el.dataset.gotoGeneral); };
+      });
+      document.querySelectorAll("#spellBody .spell-row").forEach((row) => {
+        row.onclick = () => {
+          selectedSpellId = Number(row.dataset.id);
+          showSpellDetail(SPELLS.find((s) => s.id === selectedSpellId), "spellDetail");
+          renderSpells();
+        };
+      });
+      if (selectedSpellId != null) showSpellDetail(SPELLS.find((s) => s.id === selectedSpellId), "spellDetail");
+      renderPager("spellPager", spellPage, pages, "spPrev", "spNext", (p) => { spellPage = p; renderSpells(); }, "共 " + list.length + " 条");
+    }
+
+    function filteredGenerals() {
+      const kw = (document.getElementById("generalSearch").value || "").trim().toLowerCase();
+      const onlySkills = document.getElementById("generalOnlyWithSkills").checked;
+      return GENERALS.filter((g) => {
+        const skills = getGeneralSkills(g.id);
+        if (onlySkills && !skills.length) return false;
+        if (generalLetter !== "全部" && generalSurname(g.name) !== generalLetter) return false;
+        if (!kw) return true;
+        const skillTxt = skills.map((s) => (s.name || "") + s.id).join(" ").toLowerCase();
+        return String(g.id).includes(kw) || g.name.toLowerCase().includes(kw) || skillTxt.includes(kw);
+      });
+    }
+
+    function renderGenerals() {
+      const linked = Object.keys(GENERAL_SKILLS).filter((k) => (GENERAL_SKILLS[k] || []).length).length;
+      const noticeEl = document.getElementById("generalNotice");
+      if (!linked) {
+        noticeEl.innerHTML = '<div class="notice">本份数据有 <b>' + GENERALS.length + '</b> 名武将姓名，可作 ID 对照查询。武将技能关联（generalSkills）需新版脚本重新导出后才有。</div>';
+      } else {
+        noticeEl.innerHTML = '<div class="notice">已关联 ' + linked + ' 名武将的技能。点击技能标签可跳转到技能库。</div>';
+      }
+      const list = filteredGenerals();
+      const letters = { "全部": list.length };
+      list.forEach((g) => { const L = generalSurname(g.name); letters[L] = (letters[L] || 0) + 1; });
+      const letterKeys = Object.keys(letters).sort((a, b) => (a === "全部" ? -1 : b === "全部" ? 1 : a.localeCompare(b, "zh")));
+      document.getElementById("letterBar").innerHTML = letterKeys.map((L) =>
+        '<span class="chip' + (generalLetter === L ? " active" : "") + '" data-letter="' + esc(L) + '">' + esc(L) + ' <b>' + letters[L] + '</b></span>'
+      ).join("");
+      document.querySelectorAll("#letterBar .chip").forEach((el) => {
+        el.onclick = () => { generalLetter = el.dataset.letter; generalPage = 0; renderGenerals(); };
+      });
+
+      const view = document.getElementById("generalView").value;
+      const grid = document.getElementById("generalGrid");
+      const tableWrap = document.getElementById("generalTableWrap");
+      grid.classList.toggle("hidden", view !== "grid");
+      tableWrap.classList.toggle("hidden", view === "grid");
+
+      const pages = Math.max(1, Math.ceil(list.length / (view === "grid" ? 120 : PAGE)));
+      if (generalPage >= pages) generalPage = pages - 1;
+      const slice = list.slice(generalPage * (view === "grid" ? 120 : PAGE), (generalPage + 1) * (view === "grid" ? 120 : PAGE));
+
+      if (view === "grid") {
+        grid.innerHTML = slice.map((g) => '<div class="gen-card" data-gid="' + g.id + '"><div>' + esc(g.name) + '</div><div class="gid">#' + g.id + '</div></div>').join("");
+        grid.querySelectorAll(".gen-card").forEach((c) => {
+          c.onclick = () => { document.getElementById("generalSearch").value = String(c.dataset.gid); generalPage = 0; document.getElementById("generalView").value = "table"; renderGenerals(); };
+        });
+      } else {
+        document.getElementById("generalBody").innerHTML = slice.map((g) => {
+          const skills = getGeneralSkills(g.id);
+          const open = expandedGeneral === String(g.id);
+          const preview = skills.length <= 3 ? skillPillsHtml(skills, true) : skillPillsHtml(skills.slice(0, 2), true) + '<span style="color:var(--muted);font-size:12px"> 等' + skills.length + '个</span>';
+          let rows = '<tr class="gen-row" data-gid="' + g.id + '"><td class="id-col">' + g.id + '</td><td><b>' + esc(g.name) + '</b></td><td>' + (skills.length || "—") + '</td><td>' + preview + '</td></tr>';
+          if (open && skills.length > 3) rows += '<tr class="gen-detail"><td colspan="4">' + skillPillsHtml(skills, true) + '</td></tr>';
+          return rows;
+        }).join("");
+        document.querySelectorAll("#generalBody .gen-row").forEach((row) => {
+          row.onclick = () => { const gid = row.dataset.gid; expandedGeneral = expandedGeneral === gid ? null : gid; renderGenerals(); };
+        });
+        document.querySelectorAll("#generalBody .skill-pill.clickable").forEach((el) => {
+          el.onclick = (ev) => { ev.stopPropagation(); gotoSpell(el.dataset.skillId); };
+        });
+      }
+      renderPager("generalPager", generalPage, pages, "gPrev", "gNext", (p) => { generalPage = p; renderGenerals(); }, "共 " + list.length + " 名");
+    }
+
+    function filteredRuns() {
+      const onlyValid = document.getElementById("runsOnlyValid").checked;
+      const kw = (document.getElementById("runSearch").value || "").trim().toLowerCase();
+      const gens = RAW.archive.generals || {};
+      return RUNS.filter((r) => {
+        if (onlyValid && !r.generalId && !(r.skills || []).length) return false;
+        if (!kw) return true;
+        return gName(r.generalId, gens).toLowerCase().includes(kw) || String(r.generalId || "").includes(kw);
+      });
+    }
+
+    function renderRuns() {
+      const list = filteredRuns();
+      const pages = Math.max(1, Math.ceil(list.length / 20));
+      if (runsPage >= pages) runsPage = pages - 1;
+      const slice = list.slice(runsPage * 20, (runsPage + 1) * 20);
+      const gens = RAW.archive.generals || {};
+      document.getElementById("runsList").innerHTML = slice.length
+        ? slice.map((r) => {
+            const skills = (r.skills || []).map((s) => '<span class="skill-pill">' + esc(s.name || s.id) + ' <span class="id-col">#' + s.id + '</span></span>').join("") || '<span style="color:var(--muted);font-size:12px">无技能记录</span>';
+            return '<div class="run-card"><div class="meta">' + fmtTime(r.at) + ' · 武将 <b>' + esc(gName(r.generalId, gens)) + '</b>' + (r.level != null ? ' · 等级 ' + r.level : '') + '</div><div>' + skills + '</div></div>';
+          }).join("")
+        : '<div class="run-card" style="color:var(--muted);text-align:center">暂无历史局</div>';
+      document.getElementById("runsPager").innerHTML =
+        '<button ' + (runsPage <= 0 ? 'disabled' : '') + ' id="rPrev">上一页</button>' +
+        '<span>第 ' + (runsPage + 1) + ' / ' + pages + ' 页</span>' +
+        '<button ' + (runsPage >= pages - 1 ? 'disabled' : '') + ' id="rNext">下一页</button>';
+      document.getElementById("rPrev").onclick = () => { runsPage--; renderRuns(); };
+      document.getElementById("rNext").onclick = () => { runsPage++; renderRuns(); };
+    }
+
+    function renderCurrent() {
+      const cur = RAW.current;
+      const arch = RAW.archive || {};
+      const gens = arch.generals || {};
+      const box = document.getElementById("currentBox");
+      let html = "";
+      if (cur && (cur.generalId || (cur.skills || []).length)) {
+        const skills = (cur.skills || []).map((s) => '<span class="skill-pill">' + esc(s.name || s.id) + ' #' + s.id + '</span>').join("") || "—";
+        html += '<div class="run-card"><div class="meta">快照时间 ' + fmtTime(cur.timestamp) + '</div><p>武将：<b>' + esc(gName(cur.generalId, gens)) + '</b></p><p>等级：' + esc(cur.level != null ? cur.level : "—") + '</p><p>技能：' + skills + '</p></div>';
+      } else {
+        html += '<div class="run-card" style="color:var(--muted);margin-bottom:12px">导出时不在山河图对局，或无当局数据</div>';
+      }
+      const cities = arch.cities || [];
+      if (cities.length) {
+        html += '<h2 style="font-size:15px;color:var(--accent);margin:16px 0 10px">档案中的城池事件</h2>';
+        html += cities.map((c) => '<div class="run-card"><p>城池 ID：<span class="id-col">' + esc(c.id) + '</span></p><p>事件 ID：<span class="id-col">' + esc(c.event) + '</span></p></div>').join("");
+      }
+      box.innerHTML = html || '<div class="run-card" style="color:var(--muted)">无数据</div>';
+    }
+
+    function hasRogueWorld() {
+      const rw = ROGUE_WORLD;
+      return !!(rw.shops.length || rw.mapCities.length || rw.fights.length || rw.eventChoices.length || rw.events.length);
+    }
+
+    function renderWorldNotice() {
+      const el = document.getElementById("worldNotice");
+      if (!el) return;
+      if (hasRogueWorld()) {
+        el.innerHTML = '<div class="notice">已加载 rogueWorld 世界数据。商店来自 Rplot，城池/关卡/事件来自 Rcity、Rfight、Rchoose 与 rogejson。</div>';
+      } else {
+        el.innerHTML = '<div class="notice warn">当前 JSON 没有 rogueWorld 数据。请更新幽灵山庄小抄后，在游戏内进入山河图，点「山河图数据」重新导出（需先加载过山河图 zip）。</div>';
+      }
+    }
+
+    function renderPager(elId, page, pages, prevId, nextId, onChange, extra) {
+      const el = document.getElementById(elId);
+      if (!el) return;
+      el.innerHTML =
+        '<button ' + (page <= 0 ? 'disabled' : '') + ' id="' + prevId + '">上一页</button>' +
+        '<span>第 ' + (page + 1) + ' / ' + pages + ' 页' + (extra ? ' · ' + extra : '') + '</span>' +
+        '<button ' + (page >= pages - 1 ? 'disabled' : '') + ' id="' + nextId + '">下一页</button>';
+      document.getElementById(prevId).onclick = () => { onChange(page - 1); };
+      document.getElementById(nextId).onclick = () => { onChange(page + 1); };
+    }
+
+    function renderShops() {
+      const kw = (document.getElementById("shopSearch").value || "").trim().toLowerCase();
+      const cat = document.getElementById("shopCatFilter").value;
+      const cats = [...new Set(ROGUE_WORLD.shops.map((s) => s.category || "其他"))].sort((a, b) => a.localeCompare(b, "zh"));
+      const sel = document.getElementById("shopCatFilter");
+      const curCat = sel.value;
+      sel.innerHTML = '<option value="">全部分类</option>' + cats.map((c) => '<option value="' + esc(c) + '"' + (curCat === c ? ' selected' : '') + '>' + esc(c) + '</option>').join("");
+      const list = ROGUE_WORLD.shops.filter((s) => {
+        if (cat && (s.category || "其他") !== cat) return false;
+        if (!kw) return true;
+        return [s.id, s.name, s.category, s.desc, s.money, s.level].join(" ").toLowerCase().includes(kw);
+      });
+      const pages = Math.max(1, Math.ceil(list.length / PAGE));
+      if (shopPage >= pages) shopPage = pages - 1;
+      const slice = list.slice(shopPage * PAGE, (shopPage + 1) * PAGE);
+      document.getElementById("shopBody").innerHTML = slice.length
+        ? slice.map((s) => '<tr><td class="id-col">' + esc(s.id) + '</td><td><span class="tag">' + esc(s.category || "—") + '</span></td><td>' + esc(s.name || "—") + '</td><td>' + esc(s.money != null ? s.money : "—") + '</td><td>' + esc(s.level != null ? s.level : "—") + '</td><td class="desc">' + esc(s.desc || "") + '</td></tr>').join("")
+        : '<tr><td colspan="6" style="text-align:center;color:var(--muted);padding:32px">暂无商店数据</td></tr>';
+      renderPager("shopPager", shopPage, pages, "shopPrev", "shopNext", (p) => { shopPage = p; renderShops(); });
+    }
+
+    function renderCities() {
+      const kw = (document.getElementById("citySearch").value || "").trim().toLowerCase();
+      const bossOnly = document.getElementById("cityBossOnly").checked;
+      const list = ROGUE_WORLD.mapCities.filter((c) => {
+        if (bossOnly && !c.boss) return false;
+        if (!kw) return true;
+        return [c.id, c.name, c.chapter, c.desc].join(" ").toLowerCase().includes(kw);
+      });
+      const pages = Math.max(1, Math.ceil(list.length / PAGE));
+      if (cityPage >= pages) cityPage = pages - 1;
+      const slice = list.slice(cityPage * PAGE, (cityPage + 1) * PAGE);
+      document.getElementById("cityBody").innerHTML = slice.length
+        ? slice.map((c) => '<tr><td class="id-col">' + esc(c.id) + '</td><td><b>' + esc(c.name || "—") + '</b></td><td>' + esc(c.chapter || "—") + '</td><td>' + (c.boss ? '<span class="tag">Boss</span>' : "—") + '</td><td class="desc">' + esc(c.desc || "") + '</td></tr>').join("")
+        : '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:32px">暂无城池数据</td></tr>';
+      renderPager("cityPager", cityPage, pages, "cityPrev", "cityNext", (p) => { cityPage = p; renderCities(); });
+    }
+
+    function renderFights() {
+      const kw = (document.getElementById("fightSearch").value || "").trim().toLowerCase();
+      const list = ROGUE_WORLD.fights.filter((f) => {
+        if (!kw) return true;
+        return [f.id, f.name, f.desc, f.reward].join(" ").toLowerCase().includes(kw);
+      });
+      const pages = Math.max(1, Math.ceil(list.length / PAGE));
+      if (fightPage >= pages) fightPage = pages - 1;
+      const slice = list.slice(fightPage * PAGE, (fightPage + 1) * PAGE);
+      document.getElementById("fightBody").innerHTML = slice.length
+        ? slice.map((f) => '<tr><td class="id-col">' + esc(f.id) + '</td><td><b>' + esc(f.name || "—") + '</b></td><td>' + esc(f.generalsCount != null ? f.generalsCount : "—") + '</td><td class="desc">' + esc(f.desc || "") + '</td><td class="desc">' + esc(f.reward || "") + '</td></tr>').join("")
+        : '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:32px">暂无关卡数据</td></tr>';
+      renderPager("fightPager", fightPage, pages, "fightPrev", "fightNext", (p) => { fightPage = p; renderFights(); });
+    }
+
+    function allEventRows() {
+      const rows = [];
+      ROGUE_WORLD.eventChoices.forEach((ch) => {
+        rows.push({ id: ch.id, type: "choice", fight: ch.fightName || "", lost: ch.lost || "", get: ch.get || "" });
+      });
+      ROGUE_WORLD.events.forEach((ev, i) => {
+        const gens = Array.isArray(ev.generals) ? ev.generals.length + " 将" : "";
+        rows.push({ id: ev.key + "#" + i, type: "chapter", fight: ev.fight || "", lost: ev.event || ev.key || "", get: gens });
+      });
+      return rows;
+    }
+
+    function renderEvents() {
+      const kw = (document.getElementById("eventSearch").value || "").trim().toLowerCase();
+      const typeF = document.getElementById("eventTypeFilter").value;
+      const list = allEventRows().filter((r) => {
+        if (typeF && r.type !== typeF) return false;
+        if (!kw) return true;
+        return [r.id, r.type, r.fight, r.lost, r.get].join(" ").toLowerCase().includes(kw);
+      });
+      const pages = Math.max(1, Math.ceil(list.length / PAGE));
+      if (eventPage >= pages) eventPage = pages - 1;
+      const slice = list.slice(eventPage * PAGE, (eventPage + 1) * PAGE);
+      const typeLabel = { choice: "分支选项", chapter: "章节事件" };
+      document.getElementById("eventBody").innerHTML = slice.length
+        ? slice.map((r) => '<tr><td class="id-col">' + esc(r.id) + '</td><td><span class="tag">' + esc(typeLabel[r.type] || r.type) + '</span></td><td>' + esc(r.fight || "—") + '</td><td class="desc">' + esc(r.lost || "") + '</td><td class="desc">' + esc(r.get || "") + '</td></tr>').join("")
+        : '<tr><td colspan="5" style="text-align:center;color:var(--muted);padding:32px">暂无事件/结局数据</td></tr>';
+      renderPager("eventPager", eventPage, pages, "eventPrev", "eventNext", (p) => { eventPage = p; renderEvents(); });
+    }
+
+    function renderSchools() {
+      const kw = (document.getElementById("schoolSearch").value || "").trim().toLowerCase();
+      const schools = ROGUE_WORLD.schools.filter((s) => {
+        if (!kw) return true;
+        return JSON.stringify(s).toLowerCase().includes(kw);
+      });
+      const talents = ROGUE_WORLD.talents.filter((t) => {
+        if (!kw) return true;
+        return JSON.stringify(t).toLowerCase().includes(kw);
+      });
+      const pages = Math.max(1, Math.ceil(talents.length / PAGE));
+      if (schoolPage >= pages) schoolPage = pages - 1;
+      document.getElementById("schoolBody").innerHTML = schools.length
+        ? schools.map((s) => '<tr><td><span class="tag">' + esc(s.school != null ? s.school : "—") + '</span></td><td class="desc">' + esc(typeof s.need === "object" ? JSON.stringify(s.need) : (s.need || "")) + '</td><td class="desc">' + esc(s.desc || s.name || "") + '</td></tr>').join("")
+        : '<tr><td colspan="3" style="text-align:center;color:var(--muted);padding:24px">暂无学派数据</td></tr>';
+      const tSlice = talents.slice(schoolPage * PAGE, (schoolPage + 1) * PAGE);
+      document.getElementById("talentBody").innerHTML = tSlice.length
+        ? tSlice.map((t) => '<tr><td>' + esc(t.pre != null ? t.pre : "—") + '</td><td>' + esc(t.cost != null ? t.cost : "—") + '</td><td class="desc">' + esc(t.desc || t.name || JSON.stringify(t).slice(0, 200)) + '</td></tr>').join("")
+        : '<tr><td colspan="3" style="text-align:center;color:var(--muted);padding:24px">暂无天赋数据</td></tr>';
+      renderPager("schoolPager", schoolPage, pages, "schoolPrev", "schoolNext", (p) => { schoolPage = p; renderSchools(); });
+    }
+
+    function runGlobalSearch() {
+      const kw = (document.getElementById("globalSearch").value || "").trim().toLowerCase();
+      if (!kw || !RAW) return;
+      const spellHit = SPELLS.find((s) => String(s.id) === kw || (s.name || "").toLowerCase() === kw || (s.name || "").toLowerCase().includes(kw));
+      if (spellHit) { gotoSpell(spellHit.id); return; }
+      const genHit = GENERALS.find((g) => String(g.id) === kw || g.name.toLowerCase().includes(kw));
+      if (genHit) {
+        document.getElementById("generalSearch").value = genHit.name;
+        generalPage = 0;
+        navigateSection("generals");
+        renderGenerals();
+        return;
+      }
+      document.getElementById("spellSearch").value = kw;
+      document.getElementById("rogueSearch").value = kw;
+      spellPage = 0; roguePage = 0;
+      spellCat = "全部"; spellBand = "全部";
+      navigateSection("spells");
+      renderBandChips(); renderSpellChips(); renderSpells(); renderRogueMap();
+    }
+
+    function exportCurrentFilter() {
+      if (!RAW) return;
+      const active = document.querySelector(".nav-btn[data-section].active");
+      const sec = active ? active.dataset.section : "spells";
+      let rows = [];
+      if (sec === "roguemap") {
+        rows = filteredRogueSpells().map((s) => ({ id: s.id, name: s.name, category: s.category, desc: s.desc }));
+      } else if (sec === "spells") {
+        rows = filteredSpells().map((s) => ({ id: s.id, name: s.name, category: s.category, desc: s.desc }));
+      } else if (sec === "generals") {
+        rows = filteredGenerals().map((g) => ({ id: g.id, name: g.name }));
+      } else {
+        rows = [{ note: "请在技能/山河图专属/武将页使用导出筛选" }];
+      }
+      const blob = new Blob([JSON.stringify({ section: sec, count: rows.length, rows, exportedAt: Date.now() }, null, 2)], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "山河图筛选_" + sec + "_" + new Date().toISOString().slice(0, 10) + ".json";
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(url), 3000);
+    }
+
+    function loadArchive() {
+      const loaderText = document.getElementById("loaderText");
+      fetch(ARCHIVE_URL)
+        .then((r) => {
+          if (!r.ok) throw new Error("档案加载失败 (" + r.status + ")");
+          return r.json();
+        })
+        .then((data) => {
+          loadedFileName = ARCHIVE_NAME;
+          ingest(data);
+        })
+        .catch((err) => {
+          if (loaderText) loaderText.textContent = "加载失败：" + err.message;
+        });
+    }
+
+    document.getElementById("feedbackForm").addEventListener("submit", submitFeedback);
+
+    document.querySelectorAll(".nav-btn[data-section]").forEach((btn) => {
+      btn.addEventListener("click", () => {
+        document.querySelectorAll(".nav-btn[data-section]").forEach((b) => b.classList.remove("active"));
+        btn.classList.add("active");
+        document.querySelectorAll(".section").forEach((s) => s.classList.remove("active"));
+        document.getElementById("sec-" + btn.dataset.section).classList.add("active");
+        if (btn.dataset.section === "feedback") loadFeedback();
+      });
+    });
+
+    document.getElementById("globalSearch").addEventListener("keydown", (e) => { if (e.key === "Enter") runGlobalSearch(); });
+    document.getElementById("exportFilterBtn").onclick = exportCurrentFilter;
+
+    ["spellSearch", "spellSort"].forEach((id) => {
+      document.getElementById(id).addEventListener("input", () => { spellPage = 0; renderSpells(); });
+      document.getElementById(id).addEventListener("change", () => { spellPage = 0; renderSpells(); });
+    });
+    document.getElementById("generalSearch").addEventListener("input", () => { generalPage = 0; renderGenerals(); });
+    document.getElementById("generalOnlyWithSkills").addEventListener("change", () => { generalPage = 0; renderGenerals(); });
+    document.getElementById("generalView").addEventListener("change", () => { generalPage = 0; renderGenerals(); });
+    ["rogueSearch", "rogueSort"].forEach((id) => {
+      document.getElementById(id).addEventListener("input", () => { roguePage = 0; renderRogueMap(); });
+      document.getElementById(id).addEventListener("change", () => { roguePage = 0; renderRogueMap(); });
+    });
+    document.getElementById("runSearch").addEventListener("input", () => { runsPage = 0; renderRuns(); });
+    document.getElementById("runsOnlyValid").addEventListener("change", () => { runsPage = 0; renderRuns(); });
+    document.getElementById("shopSearch").addEventListener("input", () => { shopPage = 0; renderShops(); });
+    document.getElementById("shopCatFilter").addEventListener("change", () => { shopPage = 0; renderShops(); });
+    document.getElementById("citySearch").addEventListener("input", () => { cityPage = 0; renderCities(); });
+    document.getElementById("cityBossOnly").addEventListener("change", () => { cityPage = 0; renderCities(); });
+    document.getElementById("fightSearch").addEventListener("input", () => { fightPage = 0; renderFights(); });
+    document.getElementById("eventSearch").addEventListener("input", () => { eventPage = 0; renderEvents(); });
+    document.getElementById("eventTypeFilter").addEventListener("change", () => { eventPage = 0; renderEvents(); });
+    document.getElementById("schoolSearch").addEventListener("input", () => { schoolPage = 0; renderSchools(); });
+
+    loadArchive();
+  </script>
+</body>
+</html>

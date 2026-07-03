@@ -309,30 +309,30 @@
       margin: 0 0 28px;
     }
     .gate-question em { color: var(--accent); font-style: normal; }
-    .gate-hint { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
-    .gate-slots {
-      display: flex; justify-content: center; gap: 12px; margin-bottom: 24px;
-    }
-    .gate-slot {
-      width: 56px; height: 64px;
+    .gate-input-wrap { margin-bottom: 24px; text-align: left; }
+    .gate-input {
+      width: 100%;
+      padding: 14px 16px;
       border: 2px solid var(--border);
       border-radius: 10px;
       background: var(--bg);
-      color: var(--accent);
-      font-size: 28px; font-weight: 700;
+      color: var(--text);
+      font-size: 18px;
+      letter-spacing: .35em;
       text-align: center;
-      caret-color: var(--accent);
       outline: none;
-      transition: border-color .2s, box-shadow .2s, transform .15s;
-      font-family: "PingFang SC", "Microsoft YaHei", serif;
+      font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+      box-sizing: border-box;
+      transition: border-color .2s, box-shadow .2s;
     }
-    .gate-slot:focus {
+    .gate-input::placeholder { color: rgba(143,179,204,.45); letter-spacing: .15em; font-size: 14px; }
+    .gate-input:focus {
       border-color: var(--accent);
       box-shadow: 0 0 0 3px rgba(126,200,227,.2);
-      transform: translateY(-2px);
     }
-    .gate-slot.filled { border-color: var(--accent2); background: rgba(126,200,227,.06); }
-    .gate-slot.error { border-color: #f87171; animation: gateShake .45s ease; }
+    .gate-input.error { border-color: #f87171; animation: gateShake .45s ease; }
+    .gate-char-count { font-size: 12px; color: var(--muted); margin-top: 8px; text-align: center; }
+    .gate-char-count b { color: var(--accent); }
     @keyframes gateShake {
       0%, 100% { transform: translateX(0); }
       20% { transform: translateX(-6px); }
@@ -375,11 +375,9 @@
       <p class="gate-title">欢迎访问幽灵山庄资料站</p>
       <h2 class="gate-question">你认为三国杀 OL<br>最好的公会是？</h2>
       <p class="gate-hint">请输入 <strong style="color:var(--accent)">四个字</strong> 的公会名称</p>
-      <div class="gate-slots" id="gateSlots">
-        <input class="gate-slot" type="text" maxlength="1" inputmode="text" autocomplete="off" aria-label="第1字" data-idx="0" />
-        <input class="gate-slot" type="text" maxlength="1" inputmode="text" autocomplete="off" aria-label="第2字" data-idx="1" />
-        <input class="gate-slot" type="text" maxlength="1" inputmode="text" autocomplete="off" aria-label="第3字" data-idx="2" />
-        <input class="gate-slot" type="text" maxlength="1" inputmode="text" autocomplete="off" aria-label="第4字" data-idx="3" />
+      <div class="gate-input-wrap">
+        <input id="gateInput" class="gate-input" type="text" maxlength="4" placeholder="请输入四个字" autocomplete="off" spellcheck="false" />
+        <div class="gate-char-count">已输入 <b id="gateCharCount">0</b> / 4 字</div>
       </div>
       <button type="button" class="gate-submit" id="gateSubmit">进入数据库</button>
       <div class="gate-msg" id="gateMsg"></div>
@@ -1643,7 +1641,8 @@
       const GATE_KEY = "ss_guild_gate_passed";
       const GATE_ANSWER = "幽灵山庄";
       const overlay = document.getElementById("guildGate");
-      const slots = Array.from(document.querySelectorAll(".gate-slot"));
+      const input = document.getElementById("gateInput");
+      const countEl = document.getElementById("gateCharCount");
       const submitBtn = document.getElementById("gateSubmit");
       const msgEl = document.getElementById("gateMsg");
 
@@ -1655,8 +1654,12 @@
         try { localStorage.setItem(GATE_KEY, "1"); } catch (_e) {}
       }
 
+      function normalizeInput(raw) {
+        return String(raw || "").replace(/[^\u4e00-\u9fff]/g, "").slice(0, 4);
+      }
+
       function getAnswer() {
-        return slots.map((s) => s.value.trim()).join("");
+        return normalizeInput(input.value);
       }
 
       function setMsg(text, type) {
@@ -1664,12 +1667,9 @@
         msgEl.className = "gate-msg" + (type ? " " + type : "");
       }
 
-      function updateSlotStyle() {
-        slots.forEach((s) => s.classList.toggle("filled", !!s.value));
-      }
-
-      function focusSlot(i) {
-        if (i >= 0 && i < slots.length) slots[i].focus();
+      function updateCount() {
+        const len = getAnswer().length;
+        if (countEl) countEl.textContent = String(len);
       }
 
       function enterApp() {
@@ -1683,58 +1683,41 @@
 
       function verify() {
         const ans = getAnswer();
+        input.classList.remove("error");
         if (ans.length < 4) {
-          setMsg("请填满四个字再提交", "err");
-          slots.forEach((s) => { if (!s.value) s.classList.add("error"); });
-          setTimeout(() => slots.forEach((s) => s.classList.remove("error")), 450);
-          focusSlot(slots.findIndex((s) => !s.value));
+          setMsg("请输入完整的四个字", "err");
+          input.classList.add("error");
+          setTimeout(() => input.classList.remove("error"), 450);
+          input.focus();
           return;
         }
         if (ans === GATE_ANSWER) {
           saveGatePass();
           setMsg("验证通过，欢迎回来！", "ok");
-          slots.forEach((s) => { s.disabled = true; });
+          input.disabled = true;
           submitBtn.disabled = true;
           enterApp();
         } else {
           setMsg("答案不对，再想想哪个公会最好？", "err");
-          slots.forEach((s) => s.classList.add("error"));
+          input.classList.add("error");
           setTimeout(() => {
-            slots.forEach((s) => { s.classList.remove("error"); s.value = ""; s.classList.remove("filled"); });
-            focusSlot(0);
+            input.classList.remove("error");
+            input.value = "";
+            updateCount();
+            input.focus();
           }, 450);
         }
       }
 
-      slots.forEach((slot, i) => {
-        slot.addEventListener("input", () => {
-          slot.classList.remove("error");
-          let v = slot.value.replace(/[^\u4e00-\u9fff]/g, "");
-          if (v.length > 1) v = v.slice(-1);
-          slot.value = v;
-          updateSlotStyle();
-          if (v && i < slots.length - 1) focusSlot(i + 1);
-          if (getAnswer().length === 4) setMsg("");
-        });
-        slot.addEventListener("keydown", (e) => {
-          if (e.key === "Backspace" && !slot.value && i > 0) {
-            e.preventDefault();
-            focusSlot(i - 1);
-            slots[i - 1].value = "";
-            updateSlotStyle();
-          }
-          if (e.key === "Enter") verify();
-          if (e.key === "ArrowLeft" && i > 0) { e.preventDefault(); focusSlot(i - 1); }
-          if (e.key === "ArrowRight" && i < slots.length - 1) { e.preventDefault(); focusSlot(i + 1); }
-        });
-        slot.addEventListener("paste", (e) => {
-          e.preventDefault();
-          const text = (e.clipboardData.getData("text") || "").replace(/[^\u4e00-\u9fff]/g, "").slice(0, 4);
-          text.split("").forEach((ch, j) => { if (slots[j]) slots[j].value = ch; });
-          updateSlotStyle();
-          focusSlot(Math.min(text.length, 3));
-        });
-        slot.addEventListener("focus", () => slot.select());
+      input.addEventListener("input", () => {
+        input.classList.remove("error");
+        const v = normalizeInput(input.value);
+        if (input.value !== v) input.value = v;
+        updateCount();
+        if (v.length === 4) setMsg("");
+      });
+      input.addEventListener("keydown", (e) => {
+        if (e.key === "Enter") verify();
       });
 
       submitBtn.addEventListener("click", verify);
@@ -1744,7 +1727,7 @@
         document.getElementById("loader").classList.remove("hidden");
         loadArchive();
       } else {
-        focusSlot(0);
+        input.focus();
       }
     })();
   </script>

@@ -846,6 +846,8 @@ function _ylDisableAllFeatures() { try { _ylGuildAllowed = !1; _ylPatchVipGate()
 function _ylEnableAllFeatures() { try { if (!_ylGuildActive()) return; if (_ylUnlockPollTimer) { clearInterval(_ylUnlockPollTimer); _ylUnlockPollTimer = null; } _ylPatchVipGate(); _0x135ac9 && _0x135ac9.a(!0); _0x26f135 && _0x26f135.a(!0); _ylPatchClaimVip(); _ylEnableClaimSwitches(); _ylEnableRoutineSwitches(); _ylEnableCdkConfig(); _ylInstallCdkWatcher(); _ylRestoreUI(); _ylEnsureGamebar(); _ylEnsureSkinUnlock(); _ylUnlockBotUI(); _ylWireTaskButton(); _ylWireRoutineButtons(); _ylInstallRoutineScheduler(); _ylWireRogueViewerButton(); _ylWireCloudUpdateButton(); _ylStartGamebarPoll(); if (_ylDenyTimer) { clearInterval(_ylDenyTimer); _ylDenyTimer = null; } _ylLog("公会校验通过，全部功能已开启"); } catch (e) { _ylWarn("enableAll", e); } }
 
 function _ylApplyGuildGate(gid) { const g = String(gid != null ? gid : _ylCurrentGuild()).trim(); _ylGuildKnown = !0; _ylPatchVipGate(); _ylCaptureOrigIframe(); _ylInstallGuildIframeHook(); if (_ylGuildOk(g)) { _ylWelcomeSuppressed = !1; _ylClearWelcomeRepop(); _ylGuildAllowed = !0; _ylEnableAllFeatures(); return !0; } _ylGuildAllowed = !1; _ylWelcomeSuppressed = !1; _ylLog("公会校验未通过", { got: g || "(空)", len: g.length, ok: !1 }); _ylDisableAllFeatures(); if (_ylShouldWelcomeRepop()) _ylScheduleWelcomeRepop(); return !1; } _ylCaptureOrigIframe(); _ylInstallGuildIframeHook(); if (!_ylUnlockPollTimer) _ylUnlockPollTimer = setInterval(_ylTryUnlockGuild, 2e3); setTimeout((function() { if (!_ylGuildActive()) _ylLockdownUI(); }), 0);
+window._ylApplyGuildGate = _ylApplyGuildGate;
+window._ylEnableAllFeatures = _ylEnableAllFeatures;
 
 /* ===== 幽灵山庄：调试日志 ===== */
 const _YL_DEBUG = !0;
@@ -1057,18 +1059,27 @@ function _ylCloudUpdateFallback() {
   const base = (window.__ylCloudBase || "https://sanguosha-stratagem.onrender.com").replace(/\/$/, "");
   const keys = { code: "yl_cache_app_code", sha: "yl_cache_app_sha", ver: "yl_cache_manifest_ver", until: "yl_cache_update_until", at: "yl_cache_app_at", client: "yl_client_id" };
   const week = 7 * 86400000;
+  const fetchT = function(url, opts, ms) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), ms || 120000);
+    return fetch(url, Object.assign({}, opts || {}, { signal: ctrl.signal, mode: "cors", cache: "no-store" })).finally(() => clearTimeout(timer));
+  };
   let cid = localStorage.getItem(keys.client);
   if (!cid) { cid = "c" + Date.now().toString(36); localStorage.setItem(keys.client, cid); }
-  return fetch(base + "/api/v1/handshake", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ clientId: cid, source: "panel" }), mode: "cors" })
-    .then((r) => r.json()).then((hs) => fetch(base + "/api/v1/manifest", { headers: { Authorization: "Bearer " + hs.token }, mode: "cors" }).then((r) => r.json()).then((m) => {
+  return fetchT(base + "/api/v1/handshake", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ clientId: cid, source: "panel" }) }, 30000)
+    .then((r) => r.json()).then((hs) => fetchT(base + "/api/v1/manifest", { headers: { Authorization: "Bearer " + hs.token } }, 30000).then((r) => r.json()).then((m) => {
       if (m.killSwitch) throw new Error("paused");
-      return fetch(base + "/api/v1/modules/app", { headers: { Authorization: "Bearer " + hs.token }, mode: "cors" }).then((r) => r.text()).then((code) => {
+      const mod = (m.modules || [])[0];
+      return fetchT(base + "/api/v1/modules/app", { headers: { Authorization: "Bearer " + hs.token } }, 180000).then((r) => r.text()).then((code) => {
+        if (!code || code.length < 1000) throw new Error("empty");
+        if (mod && mod.size && Math.abs(code.length - mod.size) > 32) throw new Error("size");
         const now = Date.now();
         localStorage.setItem(keys.code, code);
-        localStorage.setItem(keys.sha, (m.modules && m.modules[0] && m.modules[0].sha256) || "");
+        localStorage.setItem(keys.sha, (mod && mod.sha256) || "");
         localStorage.setItem(keys.ver, m.version || "");
         localStorage.setItem(keys.at, String(now));
         localStorage.setItem(keys.until, String(now + week));
+        if (localStorage.getItem(keys.code) !== code) throw new Error("cache");
         return { ok: !0, version: m.version || "", changed: !0 };
       });
     })).catch(() => ({ ok: !1, error: "offline" }));
@@ -1084,11 +1095,16 @@ async function _ylManualWeeklyUpdate() {
     if (btn) { btn.disabled = !0; btn.textContent = "更新中…"; }
     const pull = typeof window.__ylPullWeeklyUpdate === "function" ? window.__ylPullWeeklyUpdate : null;
     const res = pull
-      ? await pull(function(msg) { if (btn) btn.textContent = msg || "更新中…"; })
+      ? await pull(function(msg) { if (btn) btn.textContent = (msg || "更新中…").slice(0, 12); })
       : await _ylCloudUpdateFallback();
     if (!res || !res.ok) throw new Error((res && res.error) || "fail");
-    tip(res.changed ? "更新完成，即将刷新" : "已同步最新版本，即将刷新");
-    setTimeout(function() { location.reload(); }, 900);
+    tip("更新完成");
+    if (typeof window.__ylHideBootBanner === "function") window.__ylHideBootBanner();
+    if (typeof window.__ylHotReloadFromCache === "function" && window.__ylHotReloadFromCache()) {
+      if (btn) { btn.disabled = !1; btn.textContent = "检查更新"; }
+      return;
+    }
+    setTimeout(function() { location.reload(); }, 600);
   } catch (_e) {
     tip("更新失败，请稍后再试");
     if (btn) { btn.disabled = !1; btn.textContent = prev; }
@@ -3401,7 +3417,8 @@ function _0x3eccff(n, t = !0) { const i = _0x2f535f,
   l && (l[i(771)] = !t, t ? a === i(958) ? l[i(900)] = r : a === i(742) && (l[i(655)] = function() { this[i(573)] && r(); }, l[i(573)] && e !== i(590) && r()) : l[i(857)] === i(709) && (l[i(573)] = !1, l[i(445)](new Event(i(674))))); }
 
 function initAllButtons() { const n = _0x2f535f; if (!_ylGuildActive()) { _ylLockdownUI(); return; } try { _0x86dfae && _0x86dfae.a && _0x86dfae.a(!0); } catch (_e) {} _0x187946[n(770)][n(523)]((n => _0x3eccff(n, !0))); const t = !0;
-  _0x187946[n(650)][n(523)]((n => _0x3eccff(n, t))), _0x3e2af8(), _ylWireTaskButton(), _ylWireRoutineButtons(), _ylInstallRoutineScheduler(), _ylWireRogueViewerButton(), _ylEnsureGamebar(), _ylLog("initAllButtons", { basic: _0x187946[n(770)].length, vip: _0x187946[n(650)].length, vipOn: t }); }
+  _0x187946[n(650)][n(523)]((n => _0x3eccff(n, t))), _0x3e2af8(), _ylWireTaskButton(), _ylWireRoutineButtons(), _ylInstallRoutineScheduler(), _ylWireRogueViewerButton(), _ylWireCloudUpdateButton(), _ylEnsureGamebar(), _ylLog("initAllButtons", { basic: _0x187946[n(770)].length, vip: _0x187946[n(650)].length, vipOn: t }); }
+window.initAllButtons = initAllButtons;
 
 function _0x3e2af8() { const n = _0x2f535f,
     t = document[n(716)](n(452));

@@ -275,6 +275,90 @@
     .feedback-status.err { color: #f87171; }
     .loader-spin { margin: 16px auto; width: 28px; height: 28px; border: 3px solid var(--border); border-top-color: var(--accent); border-radius: 50%; animation: spin .8s linear infinite; }
     @keyframes spin { to { transform: rotate(360deg); } }
+    /* 入门问答 */
+    .gate-overlay {
+      position: fixed; inset: 0; z-index: 100000;
+      display: flex; align-items: center; justify-content: center;
+      background: radial-gradient(ellipse 80% 60% at 50% 40%, #132d4f 0%, #0b1628 55%, #060d18 100%);
+      padding: 24px;
+    }
+    .gate-overlay.hidden { display: none; }
+    .gate-card {
+      width: min(440px, 100%);
+      background: linear-gradient(165deg, var(--panel) 0%, #0a1f38 100%);
+      border: 1px solid var(--border);
+      border-radius: 16px;
+      padding: 36px 32px 32px;
+      box-shadow: 0 24px 64px rgba(0,0,0,.45), 0 0 0 1px rgba(126,200,227,.08) inset;
+      text-align: center;
+      position: relative;
+      overflow: hidden;
+    }
+    .gate-card::before {
+      content: ""; position: absolute; top: 0; left: 0; right: 0; height: 3px;
+      background: linear-gradient(90deg, transparent, var(--accent), transparent);
+    }
+    .gate-badge {
+      display: inline-block; font-size: 11px; letter-spacing: .2em;
+      color: var(--accent); border: 1px solid rgba(126,200,227,.35);
+      border-radius: 20px; padding: 4px 14px; margin-bottom: 20px;
+    }
+    .gate-title { font-size: 13px; color: var(--muted); margin: 0 0 8px; }
+    .gate-question {
+      font-size: 20px; font-weight: 600; color: var(--text); line-height: 1.5;
+      margin: 0 0 28px;
+    }
+    .gate-question em { color: var(--accent); font-style: normal; }
+    .gate-hint { font-size: 12px; color: var(--muted); margin-bottom: 16px; }
+    .gate-slots {
+      display: flex; justify-content: center; gap: 12px; margin-bottom: 24px;
+    }
+    .gate-slot {
+      width: 56px; height: 64px;
+      border: 2px solid var(--border);
+      border-radius: 10px;
+      background: var(--bg);
+      color: var(--accent);
+      font-size: 28px; font-weight: 700;
+      text-align: center;
+      caret-color: var(--accent);
+      outline: none;
+      transition: border-color .2s, box-shadow .2s, transform .15s;
+      font-family: "PingFang SC", "Microsoft YaHei", serif;
+    }
+    .gate-slot:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(126,200,227,.2);
+      transform: translateY(-2px);
+    }
+    .gate-slot.filled { border-color: var(--accent2); background: rgba(126,200,227,.06); }
+    .gate-slot.error { border-color: #f87171; animation: gateShake .45s ease; }
+    @keyframes gateShake {
+      0%, 100% { transform: translateX(0); }
+      20% { transform: translateX(-6px); }
+      40% { transform: translateX(6px); }
+      60% { transform: translateX(-4px); }
+      80% { transform: translateX(4px); }
+    }
+    .gate-submit {
+      width: 100%; padding: 12px 20px; font-size: 15px; font-weight: 600;
+      border-radius: 10px; border: none; cursor: pointer;
+      background: linear-gradient(135deg, var(--accent2), #3d8aaa);
+      color: #0b1628;
+      transition: opacity .2s, transform .15s;
+    }
+    .gate-submit:hover { opacity: .92; transform: translateY(-1px); }
+    .gate-submit:active { transform: translateY(0); }
+    .gate-msg { min-height: 22px; margin-top: 14px; font-size: 13px; }
+    .gate-msg.err { color: #f87171; }
+    .gate-msg.ok { color: var(--good); }
+    .gate-foot { margin-top: 20px; font-size: 11px; color: rgba(143,179,204,.5); }
+    .gate-overlay.passing .gate-card {
+      animation: gateOut .5s ease forwards;
+    }
+    @keyframes gateOut {
+      to { opacity: 0; transform: scale(.96) translateY(-12px); }
+    }
     @media (max-width: 1100px) {
       .detail-panel { display: none; }
     }
@@ -285,7 +369,25 @@
   </style>
 </head>
 <body>
-  <div id="loader" class="dropzone">
+  <div id="guildGate" class="gate-overlay">
+    <div class="gate-card">
+      <div class="gate-badge">山河图数据库 · 入门验证</div>
+      <p class="gate-title">欢迎访问幽灵山庄资料站</p>
+      <h2 class="gate-question">你认为三国杀 OL<br>最好的公会是？</h2>
+      <p class="gate-hint">请输入 <strong style="color:var(--accent)">四个字</strong> 的公会名称</p>
+      <div class="gate-slots" id="gateSlots">
+        <input class="gate-slot" type="text" maxlength="1" inputmode="text" autocomplete="off" aria-label="第1字" data-idx="0" />
+        <input class="gate-slot" type="text" maxlength="1" inputmode="text" autocomplete="off" aria-label="第2字" data-idx="1" />
+        <input class="gate-slot" type="text" maxlength="1" inputmode="text" autocomplete="off" aria-label="第3字" data-idx="2" />
+        <input class="gate-slot" type="text" maxlength="1" inputmode="text" autocomplete="off" aria-label="第4字" data-idx="3" />
+      </div>
+      <button type="button" class="gate-submit" id="gateSubmit">进入数据库</button>
+      <div class="gate-msg" id="gateMsg"></div>
+      <p class="gate-foot">答对一次后本浏览器将记住验证状态</p>
+    </div>
+  </div>
+
+  <div id="loader" class="dropzone hidden">
     <h2>山河图数据库</h2>
     <div class="loader-spin"></div>
     <p id="loaderText">正在加载档案数据…</p>
@@ -1535,7 +1637,116 @@
     document.getElementById("eventTypeFilter").addEventListener("change", () => { eventPage = 0; renderEvents(); });
     document.getElementById("schoolSearch").addEventListener("input", () => { schoolPage = 0; renderSchools(); });
 
-    loadArchive();
+  </script>
+  <script>
+    (function initGuildGate() {
+      const GATE_KEY = "ss_guild_gate_passed";
+      const GATE_ANSWER = "幽灵山庄";
+      const overlay = document.getElementById("guildGate");
+      const slots = Array.from(document.querySelectorAll(".gate-slot"));
+      const submitBtn = document.getElementById("gateSubmit");
+      const msgEl = document.getElementById("gateMsg");
+
+      function gatePassed() {
+        try { return localStorage.getItem(GATE_KEY) === "1"; } catch (_e) { return false; }
+      }
+
+      function saveGatePass() {
+        try { localStorage.setItem(GATE_KEY, "1"); } catch (_e) {}
+      }
+
+      function getAnswer() {
+        return slots.map((s) => s.value.trim()).join("");
+      }
+
+      function setMsg(text, type) {
+        msgEl.textContent = text || "";
+        msgEl.className = "gate-msg" + (type ? " " + type : "");
+      }
+
+      function updateSlotStyle() {
+        slots.forEach((s) => s.classList.toggle("filled", !!s.value));
+      }
+
+      function focusSlot(i) {
+        if (i >= 0 && i < slots.length) slots[i].focus();
+      }
+
+      function enterApp() {
+        overlay.classList.add("passing");
+        setTimeout(() => {
+          overlay.classList.add("hidden");
+          document.getElementById("loader").classList.remove("hidden");
+          loadArchive();
+        }, 420);
+      }
+
+      function verify() {
+        const ans = getAnswer();
+        if (ans.length < 4) {
+          setMsg("请填满四个字再提交", "err");
+          slots.forEach((s) => { if (!s.value) s.classList.add("error"); });
+          setTimeout(() => slots.forEach((s) => s.classList.remove("error")), 450);
+          focusSlot(slots.findIndex((s) => !s.value));
+          return;
+        }
+        if (ans === GATE_ANSWER) {
+          saveGatePass();
+          setMsg("验证通过，欢迎回来！", "ok");
+          slots.forEach((s) => { s.disabled = true; });
+          submitBtn.disabled = true;
+          enterApp();
+        } else {
+          setMsg("答案不对，再想想哪个公会最好？", "err");
+          slots.forEach((s) => s.classList.add("error"));
+          setTimeout(() => {
+            slots.forEach((s) => { s.classList.remove("error"); s.value = ""; s.classList.remove("filled"); });
+            focusSlot(0);
+          }, 450);
+        }
+      }
+
+      slots.forEach((slot, i) => {
+        slot.addEventListener("input", () => {
+          slot.classList.remove("error");
+          let v = slot.value.replace(/[^\u4e00-\u9fff]/g, "");
+          if (v.length > 1) v = v.slice(-1);
+          slot.value = v;
+          updateSlotStyle();
+          if (v && i < slots.length - 1) focusSlot(i + 1);
+          if (getAnswer().length === 4) setMsg("");
+        });
+        slot.addEventListener("keydown", (e) => {
+          if (e.key === "Backspace" && !slot.value && i > 0) {
+            e.preventDefault();
+            focusSlot(i - 1);
+            slots[i - 1].value = "";
+            updateSlotStyle();
+          }
+          if (e.key === "Enter") verify();
+          if (e.key === "ArrowLeft" && i > 0) { e.preventDefault(); focusSlot(i - 1); }
+          if (e.key === "ArrowRight" && i < slots.length - 1) { e.preventDefault(); focusSlot(i + 1); }
+        });
+        slot.addEventListener("paste", (e) => {
+          e.preventDefault();
+          const text = (e.clipboardData.getData("text") || "").replace(/[^\u4e00-\u9fff]/g, "").slice(0, 4);
+          text.split("").forEach((ch, j) => { if (slots[j]) slots[j].value = ch; });
+          updateSlotStyle();
+          focusSlot(Math.min(text.length, 3));
+        });
+        slot.addEventListener("focus", () => slot.select());
+      });
+
+      submitBtn.addEventListener("click", verify);
+
+      if (gatePassed()) {
+        overlay.classList.add("hidden");
+        document.getElementById("loader").classList.remove("hidden");
+        loadArchive();
+      } else {
+        focusSlot(0);
+      }
+    })();
   </script>
 </body>
 </html>

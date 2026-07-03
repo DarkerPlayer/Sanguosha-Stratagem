@@ -16,6 +16,40 @@ const MANIFEST_FILE = path.join(MODULES_DIR, "manifest.json");
 const APP_MODULE_FILE = path.join(MODULES_DIR, "app.js");
 const STARTED_AT = Date.now();
 
+const CORS_ORIGIN_PATTERNS = [
+  /^https:\/\/game\.4399iw2\.com$/,
+  /^https:\/\/my\.4399\.com$/,
+  /^https:\/\/[\w.-]+\.sanguosha\.com$/,
+  /^https:\/\/web\.kuaiwan\.com$/,
+  /^https:\/\/wan\.baidu\.com$/,
+  /^https:\/\/www\.7k7k\.com$/,
+  /^https:\/\/playgame\.iqiyi\.com$/,
+  /^https:\/\/[\w.-]+\.onrender\.com$/,
+  /^http:\/\/localhost(:\d+)?$/,
+  /^http:\/\/127\.0\.0\.1(:\d+)?$/
+];
+
+function corsAllowed(origin) {
+  if (!origin) return false;
+  return CORS_ORIGIN_PATTERNS.some((re) => re.test(origin));
+}
+
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  if (origin && corsAllowed(origin)) {
+    res.setHeader("Access-Control-Allow-Origin", origin);
+    res.setHeader("Vary", "Origin");
+  } else if (req.path.startsWith("/api/")) {
+    res.setHeader("Access-Control-Allow-Origin", "*");
+  }
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type, Authorization");
+  if (req.method === "OPTIONS") {
+    return res.status(204).end();
+  }
+  next();
+});
+
 app.use(express.json({ limit: "64kb" }));
 
 function publicBase(req) {

@@ -63,14 +63,17 @@ function buildBootstrapScript(baseUrl, version) {
     if (el) el.remove();
   }
   async function wakeServer() {
-    var delays = [0, 2000, 3000, 4000, 5000, 6000, 8000, 10000, 12000, 15000];
+    var delays = [0, 3000, 5000, 8000, 10000, 12000, 15000, 18000, 20000, 25000];
+    var timeouts = [65000, 65000, 45000, 30000, 25000, 20000, 20000, 15000, 15000, 15000];
+    var tStart = Date.now();
     for (var i = 0; i < delays.length; i++) {
       if (delays[i]) await sleep(delays[i]);
-      showBanner(i ? "服务器唤醒中… (" + (i + 1) + "/" + delays.length + ")" : "连接幽灵山庄服务器…");
+      var elapsed = Math.floor((Date.now() - tStart) / 1000);
+      showBanner(i ? "服务器唤醒中… (" + (i + 1) + "/" + delays.length + ") 已等 " + elapsed + "s" : "连接幽灵山庄服务器…（冷启动最多约 90 秒）");
       try {
         var ctrl = new AbortController();
-        var timer = setTimeout(function () { ctrl.abort(); }, 12000);
-        var res = await fetch(BASE + "/api/health", { cache: "no-store", signal: ctrl.signal });
+        var timer = setTimeout(function () { ctrl.abort(); }, timeouts[i] || 15000);
+        var res = await fetch(BASE + "/api/health", { cache: "no-store", signal: ctrl.signal, mode: "cors" });
         clearTimeout(timer);
         if (res.ok) return true;
       } catch (_e) {}
@@ -178,7 +181,7 @@ function buildBootstrapScript(baseUrl, version) {
       }
       return;
     }
-    showBanner(online ? "加载失败且无缓存，请刷新或访问 " + BASE + "/cheat" : "服务器冷启动中，请等待 30 秒后刷新", "#f87171");
+    showBanner(online ? "加载失败且无缓存，请刷新或访问 " + BASE + "/cheat" : "冷启动超时，请打开 " + BASE + "/cheat 先唤醒，或 1 分钟后刷新", "#f87171");
   }
   main();
 })();

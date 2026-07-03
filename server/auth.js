@@ -1,6 +1,7 @@
 const crypto = require("crypto");
 
 const SECRET = process.env.YL_SESSION_SECRET || "yl-dev-secret-change-on-render";
+const LICENSE_MS = Number(process.env.YL_LICENSE_MS || 7 * 24 * 60 * 60 * 1000);
 const TOKEN_TTL_MS = Number(process.env.YL_TOKEN_TTL_MS || 4 * 60 * 60 * 1000);
 const ALLOWED_GUILD = String(process.env.YL_GUILD_ID || "225756");
 
@@ -62,6 +63,7 @@ setInterval(() => {
 
 module.exports = {
   ALLOWED_GUILD,
+  LICENSE_MS,
   issueToken,
   verifyToken,
   attachGuild,

@@ -7,8 +7,8 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "build": "node scripts/build-module.js",
-    "prestart": "node scripts/build-module.js"
+    "build": "node scripts/build-userscript.js",
+    "prestart": "node scripts/build-userscript.js"
   },
   "engines": {
     "node": ">=18"

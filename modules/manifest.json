@@ -2,14 +2,9 @@
   "version": "1.0.0-2026-07-03",
   "killSwitch": false,
   "message": "",
-  "modules": [
-    {
-      "id": "app",
-      "file": "app.js",
-      "sha256": "b70586616c8a8016f36a176e294030173ee132b4334074746967e2b0abfb7feb",
-      "size": 915020
-    }
-  ],
+  "scriptFile": "ylsz.user.js",
+  "scriptSha256": "4b538844271b171337fe019b2fb829a136b0a20179d7ed578a246188f33855ee",
+  "scriptSize": 918269,
   "data": {
     "rogueArchive": "/data/%E5%B1%B1%E6%B2%B3%E5%9B%BE%E6%95%B0%E6%8D%AE_2026-07-03%20(1).json"
   }

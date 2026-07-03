@@ -1,8 +1,6 @@
 const express = require("express");
 const fs = require("fs");
 const path = require("path");
-const crypto = require("crypto");
-const { buildBootstrapScript } = require("./server/bootstrap");
 const auth = require("./server/auth");
 
 const app = express();
@@ -13,7 +11,7 @@ const CHEAT_DIR = path.join(PUBLIC_DIR, "cheat");
 const MODULES_DIR = path.join(ROOT, "modules");
 const FEEDBACK_FILE = path.join(ROOT, "data", "feedback.json");
 const MANIFEST_FILE = path.join(MODULES_DIR, "manifest.json");
-const APP_MODULE_FILE = path.join(MODULES_DIR, "app.js");
+const SCRIPT_FILE = path.join(CHEAT_DIR, "ylsz.user.js");
 const STARTED_AT = Date.now();
 
 const CORS_ORIGIN_PATTERNS = [
@@ -101,7 +99,7 @@ app.get("/api/health", (_req, res) => {
     service: "sanguosha-stratagem",
     uptime: Math.floor((Date.now() - STARTED_AT) / 1000),
     manifestVersion: manifest.version,
-    moduleReady: fs.existsSync(APP_MODULE_FILE),
+    scriptReady: fs.existsSync(SCRIPT_FILE),
     coldStartHint: "免费实例可能刚唤醒，请稍候重试"
   });
 });
@@ -144,8 +142,26 @@ app.post("/api/v1/handshake", (req, res) => {
     token: session.token,
     expiresAt: session.expiresAt,
     base: publicBase(req),
-    manifestUrl: "/api/v1/manifest",
-    moduleUrl: "/api/v1/modules/app"
+    licenseUrl: "/api/v1/license",
+    scriptUrl: "/cheat/ylsz.user.js"
+  });
+});
+
+app.get("/api/v1/license", (req, res) => {
+  const token = bearer(req);
+  if (!auth.verifyToken(token)) {
+    return res.status(401).json({ error: "无效或已过期的 token" });
+  }
+  const manifest = readManifest();
+  if (manifest.killSwitch) {
+    return res.status(503).json({ ok: false, message: manifest.message || "维护中" });
+  }
+  const base = publicBase(req);
+  res.json({
+    ok: true,
+    licenseUntil: Date.now() + auth.LICENSE_MS,
+    scriptVersion: manifest.version || "0.0.0",
+    updateUrl: base + "/cheat/ylsz.user.js"
   });
 });
 
@@ -158,7 +174,7 @@ app.get("/api/v1/manifest", (req, res) => {
   res.json(Object.assign({}, manifest, {
     serverTime: Date.now(),
     base: publicBase(req),
-    bootstrapUrl: "/cheat/bootstrap.user.js"
+    scriptUrl: "/cheat/ylsz.user.js"
   }));
 });
 
@@ -177,40 +193,17 @@ app.post("/api/v1/session", (req, res) => {
   });
 });
 
-app.get("/api/v1/modules/:id", (req, res) => {
-  const token = bearer(req);
-  if (!auth.verifyToken(token)) {
-    return res.status(401).json({ error: "需要有效 token" });
-  }
-  const id = String(req.params.id || "");
-  const manifest = readManifest();
-  if (manifest.killSwitch) {
-    return res.status(503).json({ error: manifest.message || "维护中" });
-  }
-  const mod = (manifest.modules || []).find((m) => m.id === id);
-  if (!mod) return res.status(404).json({ error: "模块不存在" });
-  const filePath = path.join(MODULES_DIR, mod.file || id + ".js");
-  if (!fs.existsSync(filePath)) {
-    return res.status(503).json({ error: "模块文件未就绪" });
-  }
-  const code = fs.readFileSync(filePath, "utf8");
-  const sha256 = crypto.createHash("sha256").update(code, "utf8").digest("hex");
-  if (mod.sha256 && mod.sha256 !== sha256) {
-    return res.status(500).json({ error: "模块校验失败" });
+app.get("/cheat/ylsz.user.js", (req, res) => {
+  if (!fs.existsSync(SCRIPT_FILE)) {
+    return res.status(503).send("// script not built, run npm run build");
   }
   res.setHeader("Content-Type", "application/javascript; charset=utf-8");
-  res.setHeader("Cache-Control", "no-store");
-  res.setHeader("X-Module-Version", manifest.version || "");
-  res.send(code);
+  res.setHeader("Cache-Control", "public, max-age=300");
+  res.sendFile(SCRIPT_FILE);
 });
 
 app.get("/cheat/bootstrap.user.js", (req, res) => {
-  const base = publicBase(req);
-  const manifest = readManifest();
-  const js = buildBootstrapScript(base, manifest.version || "2.0.0-bootstrap");
-  res.setHeader("Content-Type", "application/javascript; charset=utf-8");
-  res.setHeader("Cache-Control", "public, max-age=300");
-  res.send(js);
+  res.redirect(302, "/cheat/ylsz.user.js");
 });
 
 app.use("/data", express.static(path.join(PUBLIC_DIR, "data"), { maxAge: "1h" }));
@@ -236,7 +229,7 @@ app.get("*", (req, res, next) => {
 
 app.listen(PORT, () => {
   console.log("Sanguosha Stratagem on port", PORT);
-  if (!fs.existsSync(APP_MODULE_FILE)) {
-    console.warn("WARN: modules/app.js missing — run npm run build");
+  if (!fs.existsSync(SCRIPT_FILE)) {
+    console.warn("WARN: public/cheat/ylsz.user.js missing — run npm run build");
   }
 });

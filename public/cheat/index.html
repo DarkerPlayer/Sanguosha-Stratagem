@@ -70,8 +70,8 @@
   <div class="wrap">
     <h1>幽灵山庄小抄 · 云端版</h1>
     <p class="sub">
-      安装后<strong>每周自动更新</strong>一次小抄；其余时间本地秒开，无需联网。
-      首次或到期更新时可能需等待约 30–90 秒，属正常现象。
+      完整小抄脚本<strong>装在油猴里本地运行</strong>；云端只做<strong>每周授权</strong>和<strong>版本更新</strong>（几 KB，不注入代码）。
+      首次或到期时需联网授权一次，约几秒；一周内进游戏秒开。
     </p>
 
     <div class="card">
@@ -84,10 +84,10 @@
     </div>
 
     <div class="card">
-      <h2>安装 / 更新油猴（引导层）</h2>
-      <p class="status">只需安装一次 bootstrap；小抄每周自动同步，平时本地运行。</p>
+      <h2>安装 / 更新油猴脚本</h2>
+      <p class="status">一次安装完整脚本；满一周后自动连服务器续授权，油猴可检查脚本版本更新。</p>
       <div class="btn-row">
-        <a class="btn primary" id="installLink" href="/cheat/bootstrap.user.js">一键安装油猴</a>
+        <a class="btn primary" id="installLink" href="/cheat/ylsz.user.js">一键安装油猴</a>
         <button type="button" class="primary" id="updateBtn">一键更新油猴</button>
         <a class="btn" href="/">山河图数据库</a>
       </div>
@@ -110,8 +110,8 @@
         <li>先点 <b>唤醒 / 重新检测</b>，直到状态为绿色「在线」</li>
         <li>安装 Tampermonkey 后，点 <b>一键安装油猴</b>（或复制代码手动粘贴）</li>
         <li>进入三国杀 OL — <b>首次</b>会显示「正在准备小抄」，约 30–90 秒</li>
-        <li>之后一周内进游戏<strong>秒开</strong>，不再连服务器</li>
-        <li>满一周后自动「每周更新」，刷新游戏页即可</li>
+        <li>之后一周内进游戏<strong>秒开</strong>，不再请求云端</li>
+        <li>满一周后自动续授权；点面板「检查更新」或让油猴检查脚本更新</li>
       </ol>
     </div>
   </div>
@@ -126,8 +126,8 @@
     const toastEl = document.getElementById("toast");
     let toastTimer = null;
 
-    function bootstrapUrl() {
-      return "/cheat/bootstrap.user.js?t=" + Date.now();
+    function scriptUrl() {
+      return "/cheat/ylsz.user.js?t=" + Date.now();
     }
 
     function showToast(msg) {
@@ -153,7 +153,7 @@
         setStatus(
           '<span class="dot ok"></span>在线 · 响应 ' + ms + 'ms<br>' +
           '版本 <code>' + (data.manifestVersion || "?") + '</code> · ' +
-          '模块 ' + (data.moduleReady ? "已就绪" : "未构建") + ' · ' +
+          '模块 ' + (data.scriptReady ? "已就绪" : "未构建") + ' · ' +
           '运行 ' + (data.uptime || 0) + 's'
         );
         return true;
@@ -176,7 +176,7 @@
     }
 
     function triggerTampermonkeyUpdate() {
-      const url = bootstrapUrl();
+      const url = scriptUrl();
       installLink.href = url;
       const w = window.open(url, "_blank");
       if (!w) window.location.href = url;
@@ -188,7 +188,7 @@
       btn.disabled = true;
       btn.textContent = "加载中…";
       try {
-        const res = await fetch(bootstrapUrl(), { cache: "no-store" });
+        const res = await fetch(scriptUrl(), { cache: "no-store" });
         if (!res.ok) throw new Error("HTTP " + res.status);
         const text = await res.text();
         scriptBox.value = text;
@@ -230,7 +230,7 @@
     document.getElementById("loadScriptBtn").onclick = loadScriptCode;
     document.getElementById("copyScriptBtn").onclick = copyScriptCode;
 
-    installLink.href = bootstrapUrl();
+    installLink.href = scriptUrl();
     installLink.addEventListener("click", () => {
       setTimeout(() => showToast("若已安装，Tampermonkey 会提示更新"), 300);
     });

@@ -831,7 +831,7 @@ function _ylPatchVipGate() { if (_ylVipGatePatched) return; _ylVipGatePatched = 
 
 function _ylShowDenyWelcome() { try { typeof _0x4428a0 === "function" && _0x4428a0(_YL_GUILD_MSG, "acTooltip", 0, "green", null, !0); if (!_ylDenyTimer) _ylDenyTimer = setInterval((function() { try { typeof _0x4428a0 === "function" && _0x4428a0(_YL_GUILD_MSG, "acTooltip", 0, "green", null, !0); } catch (_e) {} }), 5e3); } catch (_e) {} }
 
-function _ylHideAllCheatDom() { try { _YL_HIDE_IDS.forEach((function(id) { const el = document.getElementById(id); if (el) { el.style.display = "none"; el.style.pointerEvents = "none"; el.style.visibility = "hidden"; } })); for (let i = 1; i <= 8; i++) { const el = document.getElementById("or" + i); if (el) { el.style.display = "none"; el.style.pointerEvents = "none"; } } document.querySelectorAll("#seatUI, #seatUI *, #rogueUI, #rogueUI *, #createIframe .cardType, #createIframe input, #createIframe button:not(#ylWelcomeClose):not(#ylRogueDataBtn), #createIframe select, #createIframe textarea, #createIframe label, #createIframe #header, #createIframe #toggle-me").forEach((function(el) { el.style.display = "none"; el.style.pointerEvents = "none"; })); const _wc = document.getElementById("ylWelcomeClose"); if (_wc) { _wc.style.display = "block"; _wc.style.visibility = "visible"; _wc.style.pointerEvents = "auto"; } } catch (_e) {} }
+function _ylHideAllCheatDom() { try { _YL_HIDE_IDS.forEach((function(id) { const el = document.getElementById(id); if (el) { el.style.display = "none"; el.style.pointerEvents = "none"; el.style.visibility = "hidden"; } })); for (let i = 1; i <= 8; i++) { const el = document.getElementById("or" + i); if (el) { el.style.display = "none"; el.style.pointerEvents = "none"; } } document.querySelectorAll("#seatUI, #seatUI *, #rogueUI, #rogueUI *, #createIframe .cardType, #createIframe input, #createIframe button:not(#ylWelcomeClose):not(#ylRogueDataBtn):not(#ylCloudUpdateBtn), #createIframe select, #createIframe textarea, #createIframe label, #createIframe #header, #createIframe #toggle-me").forEach((function(el) { el.style.display = "none"; el.style.pointerEvents = "none"; })); const _wc = document.getElementById("ylWelcomeClose"); if (_wc) { _wc.style.display = "block"; _wc.style.visibility = "visible"; _wc.style.pointerEvents = "auto"; } } catch (_e) {} }
 
 function _ylUnhideAllCheatDom() { try { _YL_HIDE_IDS.forEach((function(id) { const el = document.getElementById(id); if (el) { el.style.display = ""; el.style.pointerEvents = ""; el.style.visibility = ""; } })); for (let i = 1; i <= 8; i++) { const el = document.getElementById("or" + i); if (el) { el.style.display = ""; el.style.pointerEvents = ""; } } } catch (_e) {} }
 
@@ -843,7 +843,7 @@ function _ylTryUnlockGuild() { try { if (_ylGuildAllowed) { if (_ylUnlockPollTim
 
 function _ylDisableAllFeatures() { try { _ylGuildAllowed = !1; _ylPatchVipGate(); _0x135ac9 && _0x135ac9.a(!1); _0x26f135 && _0x26f135.a(!1); if (typeof globalConfig !== "undefined") { if (typeof Id_Key_Value !== "undefined") { for (const row of Id_Key_Value) globalConfig[row[0]] = !1; } globalConfig.skinSwitch = !1; globalConfig.skinStateSwitch = !1; globalConfig.skinStateBlockSwitch = !0; globalConfig.generalSwitch = !1; globalConfig.quedingSwitch = !1; if (typeof _0x5aec9c === "function") { [1060, 1471, 1669].forEach((function(ki) { const k = _0x5aec9c(ki); if (k) globalConfig[k] = !1; })); } } if (typeof _0x5ca56a === "function") _0x5ca56a(); const _ylDis = function(el) { if (el) { el.disabled = !0; el.checked = !1; } }; if (typeof Id_Key_Value !== "undefined") { for (const row of Id_Key_Value) { const h = String(row[0] + " " + row[1]).toLowerCase(); if (h.includes("autobot") || h.includes("autohg") || h.includes("挂机") || h.includes("bot") && h.includes("switch") || h.includes("hg") && h.includes("switch")) _ylDis(typeof _0x446a81 === "function" ? _0x446a81(row[0]) : null); } } if (typeof globalState !== "undefined") { globalState.autoBotStatus = !1; try { globalState[_0x5ad787(583)] = !1; } catch (_e) {} } if (_ylGbPollTimer) { clearInterval(_ylGbPollTimer); _ylGbPollTimer = null; } if (_ylSkinPollTimer) { clearInterval(_ylSkinPollTimer); _ylSkinPollTimer = null; } const _skinBox = document.getElementById("createSkinIframe"); if (_skinBox) _skinBox.style.display = "none"; if (_ylDenyTimer) { clearInterval(_ylDenyTimer); _ylDenyTimer = null; } _ylLockdownUI(); _ylLog("公会校验未通过，已关闭全部功能"); } catch (e) { _ylWarn("disableAll", e); } }
 
-function _ylEnableAllFeatures() { try { if (!_ylGuildActive()) return; if (_ylUnlockPollTimer) { clearInterval(_ylUnlockPollTimer); _ylUnlockPollTimer = null; } _ylPatchVipGate(); _0x135ac9 && _0x135ac9.a(!0); _0x26f135 && _0x26f135.a(!0); _ylPatchClaimVip(); _ylEnableClaimSwitches(); _ylEnableRoutineSwitches(); _ylEnableCdkConfig(); _ylInstallCdkWatcher(); _ylRestoreUI(); _ylEnsureGamebar(); _ylEnsureSkinUnlock(); _ylUnlockBotUI(); _ylWireTaskButton(); _ylWireRoutineButtons(); _ylInstallRoutineScheduler(); _ylWireRogueViewerButton(); _ylStartGamebarPoll(); if (_ylDenyTimer) { clearInterval(_ylDenyTimer); _ylDenyTimer = null; } _ylLog("公会校验通过，全部功能已开启"); } catch (e) { _ylWarn("enableAll", e); } }
+function _ylEnableAllFeatures() { try { if (!_ylGuildActive()) return; if (_ylUnlockPollTimer) { clearInterval(_ylUnlockPollTimer); _ylUnlockPollTimer = null; } _ylPatchVipGate(); _0x135ac9 && _0x135ac9.a(!0); _0x26f135 && _0x26f135.a(!0); _ylPatchClaimVip(); _ylEnableClaimSwitches(); _ylEnableRoutineSwitches(); _ylEnableCdkConfig(); _ylInstallCdkWatcher(); _ylRestoreUI(); _ylEnsureGamebar(); _ylEnsureSkinUnlock(); _ylUnlockBotUI(); _ylWireTaskButton(); _ylWireRoutineButtons(); _ylInstallRoutineScheduler(); _ylWireRogueViewerButton(); _ylWireCloudUpdateButton(); _ylStartGamebarPoll(); if (_ylDenyTimer) { clearInterval(_ylDenyTimer); _ylDenyTimer = null; } _ylLog("公会校验通过，全部功能已开启"); } catch (e) { _ylWarn("enableAll", e); } }
 
 function _ylApplyGuildGate(gid) { const g = String(gid != null ? gid : _ylCurrentGuild()).trim(); _ylGuildKnown = !0; _ylPatchVipGate(); _ylCaptureOrigIframe(); _ylInstallGuildIframeHook(); if (_ylGuildOk(g)) { _ylWelcomeSuppressed = !1; _ylClearWelcomeRepop(); _ylGuildAllowed = !0; _ylEnableAllFeatures(); return !0; } _ylGuildAllowed = !1; _ylWelcomeSuppressed = !1; _ylLog("公会校验未通过", { got: g || "(空)", len: g.length, ok: !1 }); _ylDisableAllFeatures(); if (_ylShouldWelcomeRepop()) _ylScheduleWelcomeRepop(); return !1; } _ylCaptureOrigIframe(); _ylInstallGuildIframeHook(); if (!_ylUnlockPollTimer) _ylUnlockPollTimer = setInterval(_ylTryUnlockGuild, 2e3); setTimeout((function() { if (!_ylGuildActive()) _ylLockdownUI(); }), 0);
 
@@ -989,7 +989,7 @@ async function _ylTryRoutineAction(fn, tag, tries) { if (!_ylGuildActive() || ty
 
 function _ylWireRoutineButtons() { if (!_ylGuildActive() || typeof _0x187946 === "undefined") return; _ylEnableRoutineSwitches(); const _lists = [(_0x187946.basic || []), (_0x187946.vip || [])]; const _wired = { drum: !1, kanshu: !1, wujiang: !1 }; for (const _list of _lists) { for (const cfg of _list) { if (!cfg || typeof cfg.action !== "function") continue; if (cfg.action !== drum && cfg.action !== kanshu && cfg.action !== wujiang && cfg.action !== yueka) continue; const el = _ylGetPanelEl(cfg.id); if (!el) continue; const tag = cfg.id; const action = cfg.action; el.disabled = !1; if (el.type === "checkbox") { el.onchange = function() { if (this.checked) _ylTryRoutineAction(action, tag, 6); }; if (el.checked && action !== autoSign) setTimeout((function() { _ylTryRoutineAction(action, tag, 6); }), 3e3); } else { el.onclick = function() { _ylTryRoutineAction(action, tag, 4); }; } if (action === drum) _wired.drum = !0; if (action === kanshu) _wired.kanshu = !0; if (action === wujiang) _wired.wujiang = !0; } } _ylLog("日常按钮已绑定", _wired); }
 
-function _ylPollRoutines() { if (!_ylGuildActive()) return; _ylWireRoutineButtons(); _ylWireRogueViewerButton(); if (typeof _0x187946 === "undefined") return; const _targets = [drum, kanshu]; const _lists = [(_0x187946.basic || []), (_0x187946.vip || [])]; for (const _list of _lists) { for (const cfg of _list) { if (!cfg || !_targets.includes(cfg.action)) continue; const el = _ylGetPanelEl(cfg.id); if (!el || !el.checked) continue; const _last = _ylRoutineLastRun[cfg.id] || 0; if (Date.now() - _last < 6e5) continue; _ylTryRoutineAction(cfg.action, cfg.id, 2); } } }
+function _ylPollRoutines() { if (!_ylGuildActive()) return; _ylWireRoutineButtons(); _ylWireRogueViewerButton(); _ylWireCloudUpdateButton(); if (typeof _0x187946 === "undefined") return; const _targets = [drum, kanshu]; const _lists = [(_0x187946.basic || []), (_0x187946.vip || [])]; for (const _list of _lists) { for (const cfg of _list) { if (!cfg || !_targets.includes(cfg.action)) continue; const el = _ylGetPanelEl(cfg.id); if (!el || !el.checked) continue; const _last = _ylRoutineLastRun[cfg.id] || 0; if (Date.now() - _last < 6e5) continue; _ylTryRoutineAction(cfg.action, cfg.id, 2); } } }
 
 function _ylInstallRoutineScheduler() { if (window._ylRoutinePoll) return; window._ylRoutinePoll = setInterval(_ylPollRoutines, 12e4); setTimeout(_ylPollRoutines, 25e3); _ylLog("日常任务轮询已安装"); }
 
@@ -1050,6 +1050,93 @@ function _ylShowRogueViewer() { if (!_ylGuildActive()) { _ylWarn("需加入目�
 
 function _ylWireRogueViewerButton() { if (!_ylGuildActive()) return; _ylInstallRogueClickDelegate(document); try { const _ylBindRogueBtn = function(doc) { if (!doc || !doc.body) return; _ylInstallRogueClickDelegate(doc); let btn = doc.getElementById("ylRogueDataBtn"); if (!btn) { btn = doc.createElement("button"); btn.id = "ylRogueDataBtn"; btn.type = "button"; btn.textContent = "山河图数据"; btn.title = "查看本地技能库与历史局，支持下载"; btn.style.cssText = "margin:4px 6px;padding:4px 10px;cursor:pointer;border:1px solid #7ec8e3;border-radius:4px;background:#0f2744;color:#7ec8e3;font-size:12px;pointer-events:auto;position:relative;z-index:99999;"; const anchor = doc.getElementById("task") || doc.getElementById("header") || doc.getElementById("toggle-me") || doc.body.firstChild; if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(btn, anchor.nextSibling); else doc.body.appendChild(btn); } btn.disabled = !1; btn.style.display = "inline-block"; btn.style.visibility = "visible"; btn.style.pointerEvents = "auto"; if (!btn._ylRogueBound) { btn._ylRogueBound = !0; btn.addEventListener("click", _ylRogueBtnClickHandler, !0); } }; _ylBindRogueBtn(_ylGetPanelDoc()); _ylBindRogueBtn(document); const panel = document.getElementById("createIframe"); if (panel && panel.querySelector) _ylBindRogueBtn(panel.ownerDocument || document); _ylLog("山河图按钮已绑定"); } catch (_e) { _ylWarn("wireRogueBtn", _e); } } window._ylShowRogueViewer = _ylShowRogueViewer; window._ylDownloadRogueFile = _ylDownloadRogueFile; window._ylCloseRogueViewerWindow = _ylCloseRogueViewerWindow; window._ylOpenRogueHtmlPanel = _ylOpenRogueHtmlPanel; window._ylCaptureRogueWorld = _ylCaptureRogueWorld; window._ylRefreshRogueWorldArchive = _ylRefreshRogueWorldArchive;
 
+/* ===== 幽灵山庄：面板内检查更新 ===== */
+const _YL_BTN_STYLE = "margin:4px 6px;padding:4px 10px;cursor:pointer;border:1px solid #7ec8e3;border-radius:4px;background:#0f2744;color:#7ec8e3;font-size:12px;pointer-events:auto;position:relative;z-index:99999;";
+
+function _ylCloudUpdateFallback() {
+  const base = (window.__ylCloudBase || "https://sanguosha-stratagem.onrender.com").replace(/\/$/, "");
+  const keys = { code: "yl_cache_app_code", sha: "yl_cache_app_sha", ver: "yl_cache_manifest_ver", until: "yl_cache_update_until", at: "yl_cache_app_at", client: "yl_client_id" };
+  const week = 7 * 86400000;
+  let cid = localStorage.getItem(keys.client);
+  if (!cid) { cid = "c" + Date.now().toString(36); localStorage.setItem(keys.client, cid); }
+  return fetch(base + "/api/v1/handshake", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ clientId: cid, source: "panel" }), mode: "cors" })
+    .then((r) => r.json()).then((hs) => fetch(base + "/api/v1/manifest", { headers: { Authorization: "Bearer " + hs.token }, mode: "cors" }).then((r) => r.json()).then((m) => {
+      if (m.killSwitch) throw new Error("paused");
+      return fetch(base + "/api/v1/modules/app", { headers: { Authorization: "Bearer " + hs.token }, mode: "cors" }).then((r) => r.text()).then((code) => {
+        const now = Date.now();
+        localStorage.setItem(keys.code, code);
+        localStorage.setItem(keys.sha, (m.modules && m.modules[0] && m.modules[0].sha256) || "");
+        localStorage.setItem(keys.ver, m.version || "");
+        localStorage.setItem(keys.at, String(now));
+        localStorage.setItem(keys.until, String(now + week));
+        return { ok: !0, version: m.version || "", changed: !0 };
+      });
+    })).catch(() => ({ ok: !1, error: "offline" }));
+}
+
+async function _ylManualWeeklyUpdate() {
+  if (window._ylManualUpdating) return;
+  window._ylManualUpdating = !0;
+  const btn = document.getElementById("ylCloudUpdateBtn");
+  const prev = btn ? btn.textContent : "检查更新";
+  const tip = function(msg) { try { typeof _0x4428a0 === "function" && _0x4428a0(msg, "acTooltip", 0, "green", null, !0); } catch (_e) {} };
+  try {
+    if (btn) { btn.disabled = !0; btn.textContent = "更新中…"; }
+    const pull = typeof window.__ylPullWeeklyUpdate === "function" ? window.__ylPullWeeklyUpdate : null;
+    const res = pull
+      ? await pull(function(msg) { if (btn) btn.textContent = msg || "更新中…"; })
+      : await _ylCloudUpdateFallback();
+    if (!res || !res.ok) throw new Error((res && res.error) || "fail");
+    tip(res.changed ? "更新完成，即将刷新" : "已同步最新版本，即将刷新");
+    setTimeout(function() { location.reload(); }, 900);
+  } catch (_e) {
+    tip("更新失败，请稍后再试");
+    if (btn) { btn.disabled = !1; btn.textContent = prev; }
+  } finally {
+    window._ylManualUpdating = !1;
+  }
+}
+
+function _ylCloudUpdateBtnClick(ev) {
+  try { ev && (ev.preventDefault(), ev.stopPropagation()); } catch (_e) {}
+  _ylManualWeeklyUpdate();
+}
+
+function _ylWireCloudUpdateButton() {
+  if (!_ylGuildActive()) return;
+  try {
+    const _ylBind = function(doc) {
+      if (!doc || !doc.body) return;
+      let btn = doc.getElementById("ylCloudUpdateBtn");
+      if (!btn) {
+        btn = doc.createElement("button");
+        btn.id = "ylCloudUpdateBtn";
+        btn.type = "button";
+        btn.textContent = "检查更新";
+        btn.title = "手动同步最新小抄版本";
+        btn.style.cssText = _YL_BTN_STYLE;
+        const anchor = doc.getElementById("ylRogueDataBtn") || doc.getElementById("task") || doc.getElementById("header") || doc.getElementById("toggle-me");
+        if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(btn, anchor.nextSibling);
+        else doc.body.appendChild(btn);
+      }
+      btn.disabled = !1;
+      btn.style.display = "inline-block";
+      btn.style.visibility = "visible";
+      btn.style.pointerEvents = "auto";
+      if (!btn._ylCloudUpdateBound) {
+        btn._ylCloudUpdateBound = !0;
+        btn.addEventListener("click", _ylCloudUpdateBtnClick, !0);
+      }
+    };
+    _ylBind(_ylGetPanelDoc());
+    _ylBind(document);
+    const panel = document.getElementById("createIframe");
+    if (panel) _ylBind(panel.ownerDocument || document);
+    _ylLog("检查更新按钮已绑定");
+  } catch (_e) { _ylWarn("wireCloudUpdate", _e); }
+}
+window._ylManualWeeklyUpdate = _ylManualWeeklyUpdate;
+
 /* ===== 幽灵山庄：兑换码识别 ===== */
 const _YL_CDK_RE = /(?:兑换码|CDK|礼包码|激活码)[:：\s]*([A-Za-z0-9]{6,20})|(?:^|\s)([A-Za-z]{2,8}\d{4,12}|[A-Za-z0-9]{8,16})(?:\s|$)/;
 
@@ -1092,7 +1179,7 @@ const act = (() => { async function n(t = !1) { const i = _0x47d8; let e = timer
       _ylLog("signup 返回", { activated: t && t.activated, settings: (t && t.setting || []).length, guild: _ylCurrentGuild() }); if (!t) throw _0x5ca56a(), new Error(e(571)); if (!_ylGuildActive()) { _ylApplyGuildGate(_ylCurrentGuild()); return; }
       _0x135ac9.v = !1; const a = (() => { const n = e; let i = t[n(523)]; if (typeof i === n(570)) { if (i = i[n(394)]()[n(479)](), i === n(539) || "1" === i) return !0; if (i === n(530) || "0" === i || "" === i) return !1 } return Boolean(i) })(); let l = a ? e(415) + (null == (i = t[e(445)]) ? void 0 : i[e(464)](" ")[0]) + e(473) : e(551);
       setServerSetting(a, t[e(436)]), r[e(488)] = "", t[e(494)] ? (r[e(501)](e(409), t[e(494)]), setTimeout((() => { const n = e;
-        r[n(501)](n(409), l); }), 2e3)) : r[e(501)](e(409), l), t[e(541)] && timer[e(388)]() <= new Date(t[e(541)][e(524)](" ", "T")) && _0x135ac9.gh(!0), a && (document[e(498)](e(500))[e(470)][e(443)] = e(441), _0x5e0c70()), await ve(t)[e(510)]((n => n ? _0x135ac9.a(a) : _0x135ac9[e(588)] = e(589))), _0x135ac9.a(!0), _ylEnsureGamebar(), _ylStartGamebarPoll(), startSocketKeepAlive(), syncShadowBlacklistNative(), await syncCardThemeState(), await n(!0), initAllButtons(), _ylUnlockBotUI(), _ylWireTaskButton(), _ylWireRoutineButtons(), _ylInstallRoutineScheduler(), _ylWireRogueViewerButton(), _ylEnableClaimSwitches(), _ylInstallCdkWatcher(), _ylEnsureGamebar(), _ylStartGamebarPoll(), _ylBotState("激活完成"), _ylLog("流程说明: 【1】onclick 【2】laya.event 【3】change 【4】酒馆建房 【5】盖主 【6】老友房mode9"), vld(); } catch (a) {} } })();
+        r[n(501)](n(409), l); }), 2e3)) : r[e(501)](e(409), l), t[e(541)] && timer[e(388)]() <= new Date(t[e(541)][e(524)](" ", "T")) && _0x135ac9.gh(!0), a && (document[e(498)](e(500))[e(470)][e(443)] = e(441), _0x5e0c70()), await ve(t)[e(510)]((n => n ? _0x135ac9.a(a) : _0x135ac9[e(588)] = e(589))), _0x135ac9.a(!0), _ylEnsureGamebar(), _ylStartGamebarPoll(), startSocketKeepAlive(), syncShadowBlacklistNative(), await syncCardThemeState(), await n(!0), initAllButtons(), _ylUnlockBotUI(), _ylWireTaskButton(), _ylWireRoutineButtons(), _ylInstallRoutineScheduler(), _ylWireRogueViewerButton(), _ylWireCloudUpdateButton(), _ylEnableClaimSwitches(), _ylInstallCdkWatcher(), _ylEnsureGamebar(), _ylStartGamebarPoll(), _ylBotState("激活完成"), _ylLog("流程说明: 【1】onclick 【2】laya.event 【3】change 【4】酒馆建房 【5】盖主 【6】老友房mode9"), vld(); } catch (a) {} } })();
 
 function _0x4cbe27(n) { return JSON[_0x5ad787(536)]({
     [_0x1ddb82(117, 115, 101, 114, 110, 97, 109, 101)]: _0x135ac9[_0x1ddb82(117, 115, 101, 114, 73, 68)], [_0x1ddb82(112, 108, 97, 121, 101, 114, 110, 97, 109, 101)]: _0x135ac9[_0x1ddb82(110, 105, 99, 107, 110, 97, 109, 101)], [_0x1ddb82(103, 117, 105, 108, 100, 73, 68)]: _0x135ac9[_0x1ddb82(103, 117, 105, 108, 100, 73, 68)], [_0x1ddb82(112, 97, 115, 115, 119, 111, 114, 100)]: n, [_0x1ddb82(118, 101, 114, 115, 105, 111, 110)]: _0x5e6933, d: _0x135ac9.d }) } async function reLogin() { const n = _0x5ad787,

@@ -94,23 +94,17 @@ function buildBootstrapScript(baseUrl, version) {
     el.setAttribute("data-yl-boot", "1");
     (document.documentElement || document.head || document.body).appendChild(el);
   }
-
-  if (cacheReady()) {
-    runApp(readCache());
-    return;
+  function progress(onProgress, text) {
+    if (typeof onProgress === "function") onProgress(text);
+    else showBanner(text);
   }
-
-  (async function weeklyUpdate() {
-    var hadCache = !!readCache();
-    showBanner(hadCache ? "每周自动更新中，请稍候…" : "首次加载，正在准备小抄…");
+  async function pullWeeklyUpdate(onProgress) {
     async function wakeServer() {
-      var delays = [0, 3000, 5000, 8000, 10000, 12000];
-      var timeouts = [65000, 65000, 45000, 30000, 20000, 15000];
-      var tStart = Date.now();
+      var delays = [0, 3000, 5000, 8000, 10000];
+      var timeouts = [65000, 45000, 30000, 20000, 15000];
       for (var i = 0; i < delays.length; i++) {
         if (delays[i]) await sleep(delays[i]);
-        var elapsed = Math.floor((Date.now() - tStart) / 1000);
-        showBanner("每周自动更新中… (" + (i + 1) + "/" + delays.length + ") 已等 " + elapsed + "s");
+        progress(onProgress, "检查更新中… (" + (i + 1) + "/" + delays.length + ")");
         try {
           var ctrl = new AbortController();
           var timer = setTimeout(function () { ctrl.abort(); }, timeouts[i] || 15000);
@@ -125,7 +119,7 @@ function buildBootstrapScript(baseUrl, version) {
       var last;
       for (var i = 0; i < times; i++) {
         if (i) {
-          showBanner("每周自动更新中，重试 " + (i + 1) + "/" + times + "…");
+          progress(onProgress, "检查更新中，重试 " + (i + 1) + "/" + times + "…");
           await sleep(gap);
         }
         try { return await fn(); } catch (e) { last = e; }
@@ -152,6 +146,7 @@ function buildBootstrapScript(baseUrl, version) {
       return res.json();
     }
     async function fetchApp(token) {
+      progress(onProgress, "正在下载最新版本…");
       var res = await fetch(BASE + "/api/v1/modules/app", {
         headers: { Authorization: "Bearer " + token },
         cache: "no-store",
@@ -161,12 +156,12 @@ function buildBootstrapScript(baseUrl, version) {
       return res.text();
     }
     try {
-      if (!(await wakeServer())) throw new Error("offline");
-      var hs = await withRetry(handshake, 4, 2500);
+      progress(onProgress, "正在检查更新…");
+      if (!(await wakeServer())) return { ok: false, error: "offline" };
+      var hs = await withRetry(handshake, 3, 2000);
       var manifest = await withRetry(function () { return fetchManifest(hs.token); }, 3, 2000);
       if (manifest.killSwitch) {
-        clearCache();
-        throw new Error("paused");
+        return { ok: false, error: manifest.message || "paused" };
       }
       var mod = (manifest.modules || [])[0];
       var code = await withRetry(function () { return fetchApp(hs.token); }, 3, 3000);
@@ -178,13 +173,37 @@ function buildBootstrapScript(baseUrl, version) {
           var hex = Array.from(new Uint8Array(hash)).map(function (b) { return b.toString(16).padStart(2, "0"); }).join("");
           if (hex !== mod.sha256) ok = false;
         } catch (_e) { ok = true; }
-        if (!ok) throw new Error("sha256 mismatch");
+        if (!ok) return { ok: false, error: "checksum" };
       }
+      var prevSha = lsGet(CACHE_SHA_KEY) || "";
       writeCache(code, mod && mod.sha256, manifest.version);
+      return {
+        ok: true,
+        version: manifest.version || "",
+        changed: !!(mod && mod.sha256 && mod.sha256 !== prevSha)
+      };
+    } catch (e) {
+      return { ok: false, error: String(e && e.message ? e.message : e) };
+    }
+  }
+
+  window.__ylCloudBase = BASE;
+  window.__ylPullWeeklyUpdate = pullWeeklyUpdate;
+
+  if (cacheReady()) {
+    runApp(readCache());
+    return;
+  }
+
+  (async function weeklyUpdateOnLoad() {
+    var hadCache = !!readCache();
+    showBanner(hadCache ? "每周自动更新中，请稍候…" : "首次加载，正在准备小抄…");
+    var res = await pullWeeklyUpdate(showBanner);
+    if (res.ok) {
       hideBanner();
-      runApp(code);
+      runApp(readCache());
       return;
-    } catch (_err) {}
+    }
     if (hadCache && readCache()) {
       hideBanner();
       runApp(readCache());

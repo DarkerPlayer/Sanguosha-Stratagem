@@ -2,6 +2,10 @@ function buildBootBannerSilencer() {
   return `(function __ylSilenceBootUI() {
     if (window.__ylSilenceBootOn) return;
     window.__ylSilenceBootOn = !0;
+    try {
+      if (window.__ylBannerObs) { window.__ylBannerObs.disconnect(); window.__ylBannerObs = null; }
+      if (window.__ylBannerTick) { clearInterval(window.__ylBannerTick); window.__ylBannerTick = null; }
+    } catch (_e) {}
     function killBanner() {
       var el = document.getElementById("ylBootBanner");
       if (el) el.remove();
@@ -15,29 +19,27 @@ function buildBootBannerSilencer() {
         (document.head || document.documentElement).appendChild(st);
       }
     } catch (_e) {}
-    function onBannerMutations(muts) {
-      killBanner();
-      if (!muts) return;
-      for (var i = 0; i < muts.length; i++) {
-        var list = muts[i].addedNodes;
-        for (var j = 0; j < list.length; j++) {
-          var n = list[j];
-          if (!n || n.nodeType !== 1) continue;
-          if (n.id === "ylBootBanner") { n.remove(); continue; }
-          if (n.querySelector) { var b = n.querySelector("#ylBootBanner"); if (b) b.remove(); }
+    try {
+      if (!Node.prototype.__ylBannerHooked) {
+        Node.prototype.__ylBannerHooked = !0;
+        var _append = Node.prototype.appendChild;
+        var _insert = Node.prototype.insertBefore;
+        function blockBanner(node) {
+          if (!node || node.id !== "ylBootBanner") return node;
+          try { node.style.setProperty("display", "none", "important"); } catch (_e) {}
+          return node;
         }
+        Node.prototype.appendChild = function(child) {
+          return _append.call(this, blockBanner(child));
+        };
+        Node.prototype.insertBefore = function(child, ref) {
+          return _insert.call(this, blockBanner(child), ref);
+        };
       }
-    }
-    if (typeof MutationObserver !== "undefined" && !window.__ylBannerObs) {
-      window.__ylBannerObs = new MutationObserver(onBannerMutations);
-      var attach = function () {
-        var root = document.documentElement || document.body;
-        if (root) window.__ylBannerObs.observe(root, { childList: true, subtree: true });
-        killBanner();
-      };
-      if (document.documentElement) attach();
-      else document.addEventListener("DOMContentLoaded", attach);
-    }
+    } catch (_e) {}
+    try {
+      document.querySelectorAll("script[data-yl-boot]").forEach(function (s) { s.remove(); });
+    } catch (_e) {}
     window.__ylHideBootBanner = killBanner;
   })();`;
 }

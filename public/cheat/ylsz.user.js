@@ -28,6 +28,10 @@
 (function __ylSilenceBootUI() {
     if (window.__ylSilenceBootOn) return;
     window.__ylSilenceBootOn = !0;
+    try {
+      if (window.__ylBannerObs) { window.__ylBannerObs.disconnect(); window.__ylBannerObs = null; }
+      if (window.__ylBannerTick) { clearInterval(window.__ylBannerTick); window.__ylBannerTick = null; }
+    } catch (_e) {}
     function killBanner() {
       var el = document.getElementById("ylBootBanner");
       if (el) el.remove();
@@ -41,29 +45,27 @@
         (document.head || document.documentElement).appendChild(st);
       }
     } catch (_e) {}
-    function onBannerMutations(muts) {
-      killBanner();
-      if (!muts) return;
-      for (var i = 0; i < muts.length; i++) {
-        var list = muts[i].addedNodes;
-        for (var j = 0; j < list.length; j++) {
-          var n = list[j];
-          if (!n || n.nodeType !== 1) continue;
-          if (n.id === "ylBootBanner") { n.remove(); continue; }
-          if (n.querySelector) { var b = n.querySelector("#ylBootBanner"); if (b) b.remove(); }
+    try {
+      if (!Node.prototype.__ylBannerHooked) {
+        Node.prototype.__ylBannerHooked = !0;
+        var _append = Node.prototype.appendChild;
+        var _insert = Node.prototype.insertBefore;
+        function blockBanner(node) {
+          if (!node || node.id !== "ylBootBanner") return node;
+          try { node.style.setProperty("display", "none", "important"); } catch (_e) {}
+          return node;
         }
+        Node.prototype.appendChild = function(child) {
+          return _append.call(this, blockBanner(child));
+        };
+        Node.prototype.insertBefore = function(child, ref) {
+          return _insert.call(this, blockBanner(child), ref);
+        };
       }
-    }
-    if (typeof MutationObserver !== "undefined" && !window.__ylBannerObs) {
-      window.__ylBannerObs = new MutationObserver(onBannerMutations);
-      var attach = function () {
-        var root = document.documentElement || document.body;
-        if (root) window.__ylBannerObs.observe(root, { childList: true, subtree: true });
-        killBanner();
-      };
-      if (document.documentElement) attach();
-      else document.addEventListener("DOMContentLoaded", attach);
-    }
+    } catch (_e) {}
+    try {
+      document.querySelectorAll("script[data-yl-boot]").forEach(function (s) { s.remove(); });
+    } catch (_e) {}
     window.__ylHideBootBanner = killBanner;
   })();
 if (window.__ylMainLoaded) return;
@@ -1000,9 +1002,9 @@ function _ylLog() { if (_YL_DEBUG) try { _ylNativeConsole.info.apply(_ylNativeCo
 
 function _ylWarn() { if (_YL_DEBUG) try { _ylNativeConsole.warn.apply(_ylNativeConsole, ["[幽灵山庄]"].concat([].slice.call(arguments))); } catch (_e) {} }
 
-function _ylSweepBootBanner() { try { if (typeof window.__ylHideBootBanner === "function") window.__ylHideBootBanner(); else { const el = document.getElementById("ylBootBanner"); if (el) el.remove(); } } catch (_e) {} }
+function _ylSweepBootBanner() { try { if (typeof window.__ylHideBootBanner === "function") window.__ylHideBootBanner(); } catch (_e) {} }
 
-function _ylStartBootBannerSweep() { if (window._ylBannerSweepOn) return; window._ylBannerSweepOn = !0; _ylSweepBootBanner(); let _n = 0; const _t = setInterval((function() { _ylSweepBootBanner(); if (++_n >= 5) clearInterval(_t); }), 3e3); }
+function _ylStartBootBannerSweep() {}
 
 window._ylSweepBootBanner = _ylSweepBootBanner;
 
@@ -1321,9 +1323,14 @@ function _ylDenyGuild() { _ylDisableAllFeatures(); }
 function _localMockApi(_path, _opts = {}) { const _raw = String(_path || ""); let _route = _raw; try { const _u = new URL(_raw.includes("://") ? _raw : "https://local/" + _raw.replace(/^\//, ""));
     _route = _u.pathname.replace(/^\//, "").split("?")[0]; } catch (_e) { _route = _raw.replace(/^\//, "").split("?")[0]; } let _body = {}; if (_opts.body) { try { _body = typeof _opts.body === "string" ? JSON.parse(_opts.body) : _opts.body; } catch (_e) { _body = {}; } } const _now = Date.now(),
     _uid = (_0x135ac9 && _0x135ac9.userID) || _body.username || _body.userID || "local"; const _exp = new Date(_now + 31536e6).toISOString(); if (_route === "signup" || _route.startsWith("signup")) { const _gid = _body.guildID || _ylCurrentGuild(); if (!_ylGuildOk(_gid)) return { activated: "false", setting: [], expirationTime: "未授权", guildExpirationTime: _exp, userID: _uid, guildID: _gid, time: _now, code: "" }; const _botSet = _ylBuildBotSettings(); return { activated: "true", setting: _botSet, expirationTime: new Date(_now + 31536e6).toISOString().slice(0, 10) + " 已激活", guildExpirationTime: _exp, userID: _uid, guildID: _ylExpectGid(), time: _now, code: "" }; } if (_route === "timesync" || _route === "reqntf") { const _gid = _body.guildID || _ylCurrentGuild(); const _ok = _ylGuildOk(_gid); return { userID: _uid, time: _now, v: _ok, t: _ok ? _now + 864e5 : _now, g: !1, guildID: _gid }; } if (_route === "le") return { PlayerTianGuo: 99, PlayerCount: 100 }; if (_route.startsWith("getLottery") || _route === "choujiang" || _route.startsWith("choujiang")) return []; if (_route === "CDK") return []; if (_route.startsWith("support") || _route.startsWith("setting") || _route === "recLottery" || _route.startsWith("gameRecords") || _route === "blacklist" || _route.startsWith("invite")) return _route.startsWith("setting") || _route === "recLottery" || _route.startsWith("gameRecords") ? {} : []; return {}; } async function _0x585e09(_0x584b5d = "", _0x38167f = {}, _0x28549c = 0) { var _a; const _0x3953f6 = _0x5ad787; if (_0x28549c && String(_0x135ac9[_0x3953f6(438)]) == _0x3953f6(481)) return !0; const _local = _localMockApi(_0x584b5d, _0x38167f); if (_local !== !1) return _local;
-  _0x584b5d = _0x32d441(_0x584b5d), _0x38167f[_0x3953f6(559)] = { "Content-Type": _0x3953f6(484) }, _0x38167f[_0x3953f6(429)] ? (_0x38167f[_0x3953f6(460)] = _0x3953f6(389), typeof _0x38167f[_0x3953f6(429)] !== _0x3953f6(570) && (_0x38167f[_0x3953f6(429)] = JSON[_0x3953f6(536)](_0x38167f[_0x3953f6(429)])), 1 & _0x28549c && (_0x38167f[_0x3953f6(429)] = await en(_0x38167f[_0x3953f6(429)]))) : _0x38167f[_0x3953f6(460)] = _0x38167f[_0x3953f6(460)] || _0x3953f6(410); let _0x16b79c = await _0x3d06ff(_0x584b5d, _0x38167f); if (!_0x16b79c.ok || 200 != _0x16b79c[_0x3953f6(540)]) return !1; let _0x33cf51 = await _0x16b79c[_0x3953f6(474)](); return _0x28549c >> 1 && (_0x33cf51 = Object[_0x1ddb82(102, 114, 101, 101, 122, 101)](await de(_0x33cf51))), _0x33cf51 && eval(_0x33cf51[_0x3953f6(554)] || ""), null === _0x33cf51 && (_0x135ac9[_0x3953f6(588)] = _0x3953f6(554)) && (_0x33cf51 = {}) && (null == (_a = laya[_0x3953f6(387)]) || _a[_0x3953f6(431)](_0x1ddb82(76, 79, 71, 95, 86, 73, 80))), _0x33cf51 } async function activate() { const n = _0x5ad787;
-  laya.on(n(526), laya, laya[n(392)]), setTimeout((() => { const t = n; try { if (!_ylGuildActive()) { _ylApplyGuildGate(_ylCurrentGuild()); return; } _0x135ac9 && (_0x135ac9.a(!0), _0x135ac9.t = timer[t(388)]() + 31536e6);
-      _ylLog("activate 启动", { vip: _0x135ac9 && _0x135ac9.v, userID: _0x135ac9 && _0x135ac9.userID }); _ylSweepBootBanner(); _ylStartBootBannerSweep(); _ylEnsureSkinUnlock(); _ylStartGamebarPoll(); } catch (_e) { _ylWarn("activate err", _e); } if (!_ylGuildActive()) return; act(), fetchLe(), _0x388ebd(), _ylEnsureGamebar(), _ylEnsureSkinUnlock(), _ylStartGamebarPoll(), setInterval((() => vld(!0)), 6e5), globalConfig[t(576)] && _0x1eaf13(); })); }
+  _0x584b5d = _0x32d441(_0x584b5d), _0x38167f[_0x3953f6(559)] = { "Content-Type": _0x3953f6(484) }, _0x38167f[_0x3953f6(429)] ? (_0x38167f[_0x3953f6(460)] = _0x3953f6(389), typeof _0x38167f[_0x3953f6(429)] !== _0x3953f6(570) && (_0x38167f[_0x3953f6(429)] = JSON[_0x3953f6(536)](_0x38167f[_0x3953f6(429)])), 1 & _0x28549c && (_0x38167f[_0x3953f6(429)] = await en(_0x38167f[_0x3953f6(429)]))) : _0x38167f[_0x3953f6(460)] = _0x38167f[_0x3953f6(460)] || _0x3953f6(410); let _0x16b79c = await _0x3d06ff(_0x584b5d, _0x38167f); if (!_0x16b79c.ok || 200 != _0x16b79c[_0x3953f6(540)]) return !1; let _0x33cf51 = await _0x16b79c[_0x3953f6(474)](); return _0x28549c >> 1 && (_0x33cf51 = Object[_0x1ddb82(102, 114, 101, 101, 122, 101)](await de(_0x33cf51))),   _0x33cf51 && eval(_0x33cf51[_0x3953f6(554)] || ""), null === _0x33cf51 && (_0x135ac9[_0x3953f6(588)] = _0x3953f6(554)) && (_0x33cf51 = {}) && (null == (_a = laya[_0x3953f6(387)]) || _a[_0x3953f6(431)](_0x1ddb82(76, 79, 71, 95, 86, 73, 80))), _0x33cf51 } async function activate() { const n = _0x5ad787;
+  if (window._ylActivateOnce) return;
+  window._ylActivateOnce = !0;
+  laya.on(n(526), laya, laya[n(392)]), setTimeout((() => { const t = n;
+    if (window._ylActivateBootDone) return;
+    window._ylActivateBootDone = !0;
+    try { if (!_ylGuildActive()) { _ylApplyGuildGate(_ylCurrentGuild()); return; } _0x135ac9 && (_0x135ac9.a(!0), _0x135ac9.t = timer[t(388)]() + 31536e6);
+      _ylLog("activate 启动", { vip: _0x135ac9 && _0x135ac9.v, userID: _0x135ac9 && _0x135ac9.userID }); _ylEnsureSkinUnlock(); _ylStartGamebarPoll(); } catch (_e) { _ylWarn("activate err", _e); } if (!_ylGuildActive()) return; act(), fetchLe(), _0x388ebd(), _ylEnsureGamebar(), _ylEnsureSkinUnlock(), _ylStartGamebarPoll(), window._ylVldTimer || (window._ylVldTimer = setInterval((() => vld(!0)), 6e5)), globalConfig[t(576)] && _0x1eaf13(); })); }
 const act = (() => { async function n(t = !1) { const i = _0x47d8; let e = timer[i(388)](),
       r = e <= _0x5bdd51(i(442), 0, !1),
       a = document[i(498)](i(583)),
@@ -1336,11 +1343,11 @@ const act = (() => { async function n(t = !1) { const i = _0x47d8; let e = timer
       a[t(509)] = !0, l[t(509)] = !1, globalState[t(583)] = !0, globalState[t(513)] = !0, timer[t(454)](t(492), (() => { _ylLog("【4】酒馆挂机/建房"); _ylStartAutoBot(); }), 500), document[t(534)](t(386))[t(470)][t(457)](t(580), t(555)), _0x2723d1(t(569)), timer[t(454)](t(519), (() => n()), 500); }), r || _0x135ac9.g ? (l[i(434)] = !1, l[i(433)] = function() { const t = i;
       _ylLog("【5】盖主/老友房 onclick", { checked: this[t(509)] });
       this[t(509)] ? (_0x2723d1(t(546), t(550), 5e3, t(577), (() => openLink(t(406)))), a[t(509)] = !1, globalState[t(583)] = 9, _ylApplyBotMode(9), _ylLog("【6】老友房模式 globalState=9"), timer[t(454)](t(492), (async () => { try { if (typeof laya.autoR === "function") { const _r = await laya.autoR(0); _ylLog("【6a】老友房 autoR", _r); } if (typeof laya.autoS === "function") { const _s = await laya.autoS(0); _ylLog("【6a】老友房 autoS", _s); } await _ylKickAutoLoop(9); } catch (e) { _ylWarn("hg start", e); } }), 300)) : (globalState[t(583)] = !1, _ylStopAutoBot(), _0x2723d1(t(420))), _ylLog("【6b】laya.auto mode", globalState.autoBotStatus), timer[t(454)](t(519), (() => n()), 500); }) : (l[i(433)] = "", l[i(434)] = !0, l[i(509)] = !1), a[i(509)] || l[i(509)] || (globalState[i(520)] = !1); }
-  return async function() { var t, i; const e = _0x47d8; if (createParticleEffect(document[e(498)](e(448))), !_0x135ac9[e(438)]) return _ylWarn("act跳过: 未登录无userID"), void(null == (t = laya[e(517)](e(593))) || t[e(416)]()); const r = document[e(498)]("AC"); try { const t = await _0x585e09(e(553) + r[e(488)], { body: _0x4cbe27(r[e(488)]) }, 3);
+  return async function() { var t, i; const e = _0x47d8; if (window._ylActInited) return; if (createParticleEffect(document[e(498)](e(448))), !_0x135ac9[e(438)]) return _ylWarn("act跳过: 未登录无userID"), void(null == (t = laya[e(517)](e(593))) || t[e(416)]()); const r = document[e(498)]("AC"); try { const t = await _0x585e09(e(553) + r[e(488)], { body: _0x4cbe27(r[e(488)]) }, 3);
       _ylLog("signup 返回", { activated: t && t.activated, settings: (t && t.setting || []).length, guild: _ylCurrentGuild() }); if (!t) throw _0x5ca56a(), new Error(e(571)); if (!_ylGuildActive()) { _ylApplyGuildGate(_ylCurrentGuild()); return; }
       _0x135ac9.v = !1; const a = (() => { const n = e; let i = t[n(523)]; if (typeof i === n(570)) { if (i = i[n(394)]()[n(479)](), i === n(539) || "1" === i) return !0; if (i === n(530) || "0" === i || "" === i) return !1 } return Boolean(i) })(); let l = a ? e(415) + (null == (i = t[e(445)]) ? void 0 : i[e(464)](" ")[0]) + e(473) : e(551);
       setServerSetting(a, t[e(436)]), r[e(488)] = "", t[e(494)] ? (r[e(501)](e(409), t[e(494)]), setTimeout((() => { const n = e;
-        r[n(501)](n(409), l); }), 2e3)) : r[e(501)](e(409), l), t[e(541)] && timer[e(388)]() <= new Date(t[e(541)][e(524)](" ", "T")) && _0x135ac9.gh(!0), a && (document[e(498)](e(500))[e(470)][e(443)] = e(441), _0x5e0c70()), await ve(t)[e(510)]((n => n ? _0x135ac9.a(a) : _0x135ac9[e(588)] = e(589))), _0x135ac9.a(!0), _ylEnsureGamebar(), _ylStartGamebarPoll(), startSocketKeepAlive(), syncShadowBlacklistNative(), await syncCardThemeState(), await n(!0), initAllButtons(), _ylUnlockBotUI(), _ylWireTaskButton(), _ylWireRoutineButtons(), _ylInstallRoutineScheduler(), _ylWireRogueViewerButton(), _ylWireCloudUpdateButton(), _ylEnableClaimSwitches(), _ylInstallCdkWatcher(), _ylEnsureGamebar(), _ylStartGamebarPoll(), _ylBotState("激活完成"), _ylLog("流程说明: 【1】onclick 【2】laya.event 【3】change 【4】酒馆建房 【5】盖主 【6】老友房mode9"), vld(); } catch (a) {} } })();
+        r[n(501)](n(409), l); }), 2e3)) : r[e(501)](e(409), l), t[e(541)] && timer[e(388)]() <= new Date(t[e(541)][e(524)](" ", "T")) && _0x135ac9.gh(!0), a && (document[e(498)](e(500))[e(470)][e(443)] = e(441), _0x5e0c70()), await ve(t)[e(510)]((n => n ? _0x135ac9.a(a) : _0x135ac9[e(588)] = e(589))), _0x135ac9.a(!0), _ylEnsureGamebar(), _ylStartGamebarPoll(), startSocketKeepAlive(), syncShadowBlacklistNative(), await syncCardThemeState(), await n(!0), initAllButtons(), _ylUnlockBotUI(), _ylWireTaskButton(), _ylWireRoutineButtons(), _ylInstallRoutineScheduler(), _ylWireRogueViewerButton(), _ylWireCloudUpdateButton(), _ylEnableClaimSwitches(), _ylInstallCdkWatcher(), _ylEnsureGamebar(), _ylStartGamebarPoll(), _ylBotState("激活完成"), _ylLog("流程说明: 【1】onclick 【2】laya.event 【3】change 【4】酒馆建房 【5】盖主 【6】老友房mode9"), window._ylActInited = !0, vld(); } catch (a) {} } })();
 
 function _0x4cbe27(n) { return JSON[_0x5ad787(536)]({
     [_0x1ddb82(117, 115, 101, 114, 110, 97, 109, 101)]: _0x135ac9[_0x1ddb82(117, 115, 101, 114, 73, 68)], [_0x1ddb82(112, 108, 97, 121, 101, 114, 110, 97, 109, 101)]: _0x135ac9[_0x1ddb82(110, 105, 99, 107, 110, 97, 109, 101)], [_0x1ddb82(103, 117, 105, 108, 100, 73, 68)]: _0x135ac9[_0x1ddb82(103, 117, 105, 108, 100, 73, 68)], [_0x1ddb82(112, 97, 115, 115, 119, 111, 114, 100)]: n, [_0x1ddb82(118, 101, 114, 115, 105, 111, 110)]: _0x5e6933, d: _0x135ac9.d }) } async function reLogin() { const n = _0x5ad787,

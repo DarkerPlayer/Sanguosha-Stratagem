@@ -1158,15 +1158,20 @@ function _ylRefreshRogueWorldArchive() { try { const st = _ylCaptureRogueStatic(
 
 function _ylShowRogueViewer() { if (!_ylGuildActive()) { _ylWarn("需加入目标公会后才能查看"); return !1; } if (window._ylRogueViewerOpening) return !1; window._ylRogueViewerOpening = !0; try { _ylRefreshRogueWorldArchive(); _ylExportRogueData({ persist: !1 }); const html = _ylBuildRogueViewerHtml(); if (!html || html.length < 50) { _ylWarn("山河图 HTML 生成失败"); return !1; } _ylOpenRogueHtmlPanel(html, "山河图数据库 · 幽灵山庄"); _ylLog("山河图查看器已打开"); return !0; } catch (_e) { _ylWarn("showRogueViewer", _e); return !1; } finally { window._ylRogueViewerOpening = !1; } }
 
-function _ylWireRogueViewerButton() { if (!_ylGuildActive()) return; _ylInstallRogueClickDelegate(document); try { const _ylBindRogueBtn = function(doc) { if (!doc || !doc.body) return; _ylInstallRogueClickDelegate(doc); let btn = doc.getElementById("ylRogueDataBtn"); if (!btn) { btn = doc.createElement("button"); btn.id = "ylRogueDataBtn"; btn.type = "button"; btn.textContent = "山河图数据"; btn.title = "查看本地技能库与历史局，支持下载"; btn.style.cssText = "margin:4px 6px;padding:4px 10px;cursor:pointer;border:1px solid #7ec8e3;border-radius:4px;background:#0f2744;color:#7ec8e3;font-size:12px;pointer-events:auto;position:relative;z-index:99999;"; const anchor = doc.getElementById("task") || doc.getElementById("header") || doc.getElementById("toggle-me") || doc.body.firstChild; if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(btn, anchor.nextSibling); else doc.body.appendChild(btn); } btn.disabled = !1; btn.style.display = "inline-block"; btn.style.visibility = "visible"; btn.style.pointerEvents = "auto"; if (!btn._ylRogueBound) { btn._ylRogueBound = !0; btn.addEventListener("click", _ylRogueBtnClickHandler, !0); } }; _ylBindRogueBtn(_ylGetPanelDoc()); _ylBindRogueBtn(document); const panel = document.getElementById("createIframe"); if (panel && panel.querySelector) _ylBindRogueBtn(panel.ownerDocument || document); _ylLog("山河图按钮已绑定"); } catch (_e) { _ylWarn("wireRogueBtn", _e); } } window._ylShowRogueViewer = _ylShowRogueViewer; window._ylDownloadRogueFile = _ylDownloadRogueFile; window._ylCloseRogueViewerWindow = _ylCloseRogueViewerWindow; window._ylOpenRogueHtmlPanel = _ylOpenRogueHtmlPanel; window._ylCaptureRogueWorld = _ylCaptureRogueWorld; window._ylRefreshRogueWorldArchive = _ylRefreshRogueWorldArchive;
+function _ylGetQuickActionHost(doc) { if (!doc) return null; const laya = doc.getElementById("layaDiv"); if (laya) return laya; const task = doc.getElementById("task"); return task && task.parentNode ? task.parentNode : null; }
+
+function _ylPlaceInQuickActions(doc, btn, afterId) { const host = _ylGetQuickActionHost(doc); if (!host || !btn) return; const after = afterId ? doc.getElementById(afterId) : null; if (after && host.contains(after)) { if (btn.parentNode !== host || btn.previousElementSibling !== after) host.insertBefore(btn, after.nextSibling); } else if (!host.contains(btn)) host.appendChild(btn); }
+
+function _ylApplyQuickActionBtnStyle(btn) { if (!btn) return; btn.className = "calRes"; btn.style.pointerEvents = "auto"; btn.style.visibility = "visible"; }
+
+function _ylWireRogueViewerButton() { if (!_ylGuildActive()) return; _ylInstallRogueClickDelegate(document); try { const _ylBindRogueBtn = function(doc) { if (!doc || !doc.body) return; _ylInstallRogueClickDelegate(doc); let btn = doc.getElementById("ylRogueDataBtn"); if (!btn) { btn = doc.createElement("button"); btn.id = "ylRogueDataBtn"; btn.type = "button"; } btn.textContent = "山河图数据"; btn.title = "查看本地技能库与历史局，支持下载"; _ylApplyQuickActionBtnStyle(btn); _ylPlaceInQuickActions(doc, btn, "task"); btn.disabled = !1; if (!btn._ylRogueBound) { btn._ylRogueBound = !0; btn.addEventListener("click", _ylRogueBtnClickHandler, !0); } }; _ylBindRogueBtn(_ylGetPanelDoc()); _ylBindRogueBtn(document); const panel = document.getElementById("createIframe"); if (panel && panel.querySelector) _ylBindRogueBtn(panel.ownerDocument || document); _ylLog("山河图按钮已绑定"); } catch (_e) { _ylWarn("wireRogueBtn", _e); } } window._ylShowRogueViewer = _ylShowRogueViewer; window._ylDownloadRogueFile = _ylDownloadRogueFile; window._ylCloseRogueViewerWindow = _ylCloseRogueViewerWindow; window._ylOpenRogueHtmlPanel = _ylOpenRogueHtmlPanel; window._ylCaptureRogueWorld = _ylCaptureRogueWorld; window._ylRefreshRogueWorldArchive = _ylRefreshRogueWorldArchive;
 
 /* ===== 幽灵山庄：面板内检查更新（仅授权 + 油猴更新） ===== */
-const _YL_BTN_STYLE = "margin:4px 6px;padding:4px 10px;cursor:pointer;border:1px solid #7ec8e3;border-radius:4px;background:#0f2744;color:#7ec8e3;font-size:12px;pointer-events:auto;position:relative;z-index:99999;";
 
 async function _ylManualWeeklyUpdate() {
   if (window._ylManualUpdating) return;
   window._ylManualUpdating = !0;
-  const btn = document.getElementById("ylCloudUpdateBtn");
+  const btn = _ylGetPanelEl("ylCloudUpdateBtn") || document.getElementById("ylCloudUpdateBtn");
   const prev = btn ? btn.textContent : "检查更新";
   const tip = function(msg) { try { typeof _0x4428a0 === "function" && _0x4428a0(msg, "acTooltip", 0, "green", null, !0); } catch (_e) {} };
   try {
@@ -1204,17 +1209,12 @@ function _ylWireCloudUpdateButton() {
         btn = doc.createElement("button");
         btn.id = "ylCloudUpdateBtn";
         btn.type = "button";
-        btn.textContent = "检查更新";
-        btn.title = "续期一周授权，并打开油猴脚本更新页";
-        btn.style.cssText = _YL_BTN_STYLE;
-        const anchor = doc.getElementById("ylRogueDataBtn") || doc.getElementById("task") || doc.getElementById("header") || doc.getElementById("toggle-me");
-        if (anchor && anchor.parentNode) anchor.parentNode.insertBefore(btn, anchor.nextSibling);
-        else doc.body.appendChild(btn);
       }
+      btn.textContent = "检查更新";
+      btn.title = "续期一周授权，并打开油猴脚本更新页";
+      _ylApplyQuickActionBtnStyle(btn);
+      _ylPlaceInQuickActions(doc, btn, "ylRogueDataBtn");
       btn.disabled = !1;
-      btn.style.display = "inline-block";
-      btn.style.visibility = "visible";
-      btn.style.pointerEvents = "auto";
       if (!btn._ylCloudUpdateBound) {
         btn._ylCloudUpdateBound = !0;
         btn.addEventListener("click", _ylCloudUpdateBtnClick, !0);

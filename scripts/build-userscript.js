@@ -70,7 +70,7 @@ function writeManifest(filePath, version) {
 }
 
 function assemble(body) {
-  const version = process.env.YL_MODULE_VERSION || "1.0.0-" + new Date().toISOString().slice(0, 10);
+  const version = process.env.YL_MODULE_VERSION || "2.0.0-" + new Date().toISOString().slice(0, 10);
   const gate = buildLicenseGate(BASE);
   const main = body.trim();
   const wrapped = buildHeader(version) + "\n(async function () {\n\"use strict\";\n" + gate + "\n" + main + "\n})();\n";

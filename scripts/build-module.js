@@ -11,7 +11,7 @@ function writeManifest(body) {
   const sha256 = crypto.createHash("sha256").update(body, "utf8").digest("hex");
   const stat = fs.statSync(out);
   const manifest = {
-    version: process.env.YL_MODULE_VERSION || "1.0.0-" + new Date().toISOString().slice(0, 10),
+    version: process.env.YL_MODULE_VERSION || "2.0.0-" + new Date().toISOString().slice(0, 10),
     killSwitch: false,
     message: "",
     modules: [{ id: "app", file: "app.js", sha256, size: stat.size }],

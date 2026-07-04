@@ -2,7 +2,7 @@
 const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
-const { buildLicenseGate } = require("../server/license-gate");
+const { buildLicenseGate, buildBootBannerSilencer } = require("../server/license-gate");
 
 const src = path.join(__dirname, "..", "..", "幽灵山庄小抄.txt");
 const out = path.join(__dirname, "..", "public", "cheat", "ylsz.user.js");
@@ -73,7 +73,7 @@ function assemble(body) {
   const version = process.env.YL_MODULE_VERSION || "2.0.0-" + new Date().toISOString().slice(0, 10);
   const gate = buildLicenseGate(BASE);
   const main = body.trim();
-  const wrapped = buildHeader(version) + "\n(async function () {\n\"use strict\";\n" + gate + "\n" + main + "\n})();\n";
+  const wrapped = buildHeader(version) + "\n" + buildBootBannerSilencer() + "\n(async function () {\n\"use strict\";\n" + gate + "\n" + main + "\n})();\n";
   fs.mkdirSync(path.dirname(out), { recursive: true });
   fs.writeFileSync(out, wrapped, "utf8");
   writeManifest(out, version);

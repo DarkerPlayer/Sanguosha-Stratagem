@@ -65,17 +65,7 @@ function buildBootstrapScript(baseUrl, version) {
     [CACHE_CODE_KEY, CACHE_SHA_KEY, CACHE_VER_KEY, CACHE_UPDATE_UNTIL_KEY, CACHE_AT_KEY].forEach(lsDel);
   }
   function showBanner(text, color) {
-    try {
-      var el = document.getElementById("ylBootBanner");
-      if (!el) {
-        el = document.createElement("div");
-        el.id = "ylBootBanner";
-        el.style.cssText = "position:fixed;left:50%;top:12px;transform:translateX(-50%);z-index:2147483647;padding:8px 14px;border-radius:8px;font:13px/1.4 -apple-system,PingFang SC,Microsoft YaHei,sans-serif;color:#e8f4fc;background:rgba(15,39,68,.92);border:1px solid #7ec8e3;box-shadow:0 6px 24px rgba(0,0,0,.35);pointer-events:none;max-width:92vw;text-align:center";
-        (document.documentElement || document.body).appendChild(el);
-      }
-      el.textContent = text;
-      if (color) el.style.borderColor = color;
-    } catch (_e) {}
+    try { hideBanner(); } catch (_e) {}
   }
   function hideBanner() {
     var el = document.getElementById("ylBootBanner");
@@ -108,7 +98,6 @@ function buildBootstrapScript(baseUrl, version) {
   }
   function progress(onProgress, text) {
     if (typeof onProgress === "function") onProgress(text);
-    else showBanner(text);
   }
   async function fetchCors(url, opts, timeoutMs) {
     var ctrl = new AbortController();
@@ -225,11 +214,9 @@ function buildBootstrapScript(baseUrl, version) {
 
   (async function weeklyUpdateOnLoad() {
     var hadCache = !!(readCache() && readCache().length > 1000);
-    showBanner(hadCache ? "每周自动更新中，请稍候…" : "首次加载，正在准备小抄…");
-    var res = await pullWeeklyUpdate(showBanner);
+    var res = await pullWeeklyUpdate(null);
     if (res.ok && startAppFromCache()) return;
     if (hadCache && startAppFromCache()) return;
-    showBanner("更新暂时失败，请稍后刷新或打开 " + BASE + "/cheat", "#fbbf24");
   })();
 })();
 `;

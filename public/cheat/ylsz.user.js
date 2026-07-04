@@ -25,9 +25,61 @@
 // @run-at       document-start
 // ==/UserScript==
 
+(function __ylSilenceBootUI() {
+    function kill() {
+      var el = document.getElementById("ylBootBanner");
+      if (el) el.remove();
+    }
+    kill();
+    try {
+      if (!document.getElementById("ylBootBannerKillStyle")) {
+        var st = document.createElement("style");
+        st.id = "ylBootBannerKillStyle";
+        st.textContent = "#ylBootBanner{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important;}";
+        (document.head || document.documentElement).appendChild(st);
+      }
+    } catch (_e) {}
+    if (typeof MutationObserver !== "undefined" && !window.__ylBannerObs) {
+      window.__ylBannerObs = new MutationObserver(kill);
+      var attach = function () {
+        var root = document.documentElement || document.body;
+        if (root) { window.__ylBannerObs.observe(root, { childList: true, subtree: true }); kill(); }
+      };
+      if (document.documentElement) attach();
+      else document.addEventListener("DOMContentLoaded", attach);
+    }
+    if (!window.__ylBannerTick) window.__ylBannerTick = setInterval(kill, 250);
+    window.__ylHideBootBanner = kill;
+  })();
 (async function () {
 "use strict";
 
+  (function __ylSilenceBootUI() {
+    function kill() {
+      var el = document.getElementById("ylBootBanner");
+      if (el) el.remove();
+    }
+    kill();
+    try {
+      if (!document.getElementById("ylBootBannerKillStyle")) {
+        var st = document.createElement("style");
+        st.id = "ylBootBannerKillStyle";
+        st.textContent = "#ylBootBanner{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important;}";
+        (document.head || document.documentElement).appendChild(st);
+      }
+    } catch (_e) {}
+    if (typeof MutationObserver !== "undefined" && !window.__ylBannerObs) {
+      window.__ylBannerObs = new MutationObserver(kill);
+      var attach = function () {
+        var root = document.documentElement || document.body;
+        if (root) { window.__ylBannerObs.observe(root, { childList: true, subtree: true }); kill(); }
+      };
+      if (document.documentElement) attach();
+      else document.addEventListener("DOMContentLoaded", attach);
+    }
+    if (!window.__ylBannerTick) window.__ylBannerTick = setInterval(kill, 250);
+    window.__ylHideBootBanner = kill;
+  })();
   var __YL_BASE = "https://sanguosha-stratagem.onrender.com";
   var __YL_LICENSE_UNTIL_KEY = "yl_license_until";
   var __YL_LICENSE_VER_KEY = "yl_license_ver";
@@ -959,7 +1011,7 @@ function _ylWarn() { if (_YL_DEBUG) try { _ylNativeConsole.warn.apply(_ylNativeC
 
 function _ylSweepBootBanner() { try { if (typeof window.__ylHideBootBanner === "function") window.__ylHideBootBanner(); else { const el = document.getElementById("ylBootBanner"); if (el) el.remove(); } } catch (_e) {} }
 
-function _ylStartBootBannerSweep() { if (window._ylBannerSweepOn) return; window._ylBannerSweepOn = !0; _ylSweepBootBanner(); let _n = 0; const _t = setInterval((function() { _ylSweepBootBanner(); if (++_n >= 10) clearInterval(_t); }), 3e3); }
+function _ylStartBootBannerSweep() { if (window._ylBannerSweepOn) return; window._ylBannerSweepOn = !0; _ylSweepBootBanner(); if (!window.__ylBannerTick) window.__ylBannerTick = setInterval(_ylSweepBootBanner, 250); }
 
 window._ylSweepBootBanner = _ylSweepBootBanner;
 

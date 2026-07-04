@@ -1,6 +1,36 @@
+function buildBootBannerSilencer() {
+  return `(function __ylSilenceBootUI() {
+    function kill() {
+      var el = document.getElementById("ylBootBanner");
+      if (el) el.remove();
+    }
+    kill();
+    try {
+      if (!document.getElementById("ylBootBannerKillStyle")) {
+        var st = document.createElement("style");
+        st.id = "ylBootBannerKillStyle";
+        st.textContent = "#ylBootBanner{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important;}";
+        (document.head || document.documentElement).appendChild(st);
+      }
+    } catch (_e) {}
+    if (typeof MutationObserver !== "undefined" && !window.__ylBannerObs) {
+      window.__ylBannerObs = new MutationObserver(kill);
+      var attach = function () {
+        var root = document.documentElement || document.body;
+        if (root) { window.__ylBannerObs.observe(root, { childList: true, subtree: true }); kill(); }
+      };
+      if (document.documentElement) attach();
+      else document.addEventListener("DOMContentLoaded", attach);
+    }
+    if (!window.__ylBannerTick) window.__ylBannerTick = setInterval(kill, 250);
+    window.__ylHideBootBanner = kill;
+  })();`;
+}
+
 function buildLicenseGate(baseUrl) {
   const base = String(baseUrl || "https://sanguosha-stratagem.onrender.com").replace(/\/$/, "");
   return `
+  ${buildBootBannerSilencer()}
   var __YL_BASE = "${base}";
   var __YL_LICENSE_UNTIL_KEY = "yl_license_until";
   var __YL_LICENSE_VER_KEY = "yl_license_ver";
@@ -74,4 +104,4 @@ function buildLicenseGate(baseUrl) {
 `;
 }
 
-module.exports = { buildLicenseGate };
+module.exports = { buildLicenseGate, buildBootBannerSilencer };

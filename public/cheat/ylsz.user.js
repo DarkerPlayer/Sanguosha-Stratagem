@@ -51,6 +51,11 @@
   function __ylHideBootBanner() {
     var el = document.getElementById("ylBootBanner");
     if (el) el.remove();
+    if (window.__ylBootBannerTimer) { clearTimeout(window.__ylBootBannerTimer); window.__ylBootBannerTimer = null; }
+  }
+  function __ylBootBannerAutoHide(ms) {
+    if (window.__ylBootBannerTimer) clearTimeout(window.__ylBootBannerTimer);
+    window.__ylBootBannerTimer = setTimeout(__ylHideBootBanner, ms || 5000);
   }
   async function __ylFetchCors(url, opts, ms) {
     var ctrl = new AbortController();
@@ -92,19 +97,20 @@
     }
   }
   async function __ylEnsureLicense() {
-    if (__ylLicensed()) return true;
+    if (__ylLicensed()) { __ylHideBootBanner(); return true; }
     var had = !!__ylLsGet(__YL_LICENSE_UNTIL_KEY);
     __ylBootBanner(had ? "每周自动更新中，请稍候…" : "首次加载，正在准备小抄…");
     var lic = await __ylRenewLicense(__ylBootBanner);
     if (lic.ok) { __ylHideBootBanner(); return true; }
-    __ylBootBanner("暂时无法连接服务器，请稍后重试或打开 " + __YL_BASE + "/cheat", "#fbbf24");
-    return false;
+    __ylBootBanner("授权同步失败，小抄照常使用 · 可点面板「检查更新」", "#fbbf24");
+    __ylBootBannerAutoHide(4000);
+    return true;
   }
   window.__ylCloudBase = __YL_BASE;
   window.__ylRenewLicense = __ylRenewLicense;
   window.__ylHideBootBanner = __ylHideBootBanner;
   window.__ylLicensed = __ylLicensed;
-  if (!(await __ylEnsureLicense())) return;
+  await __ylEnsureLicense();
 
 (function () {
 	'use strict';
@@ -951,7 +957,7 @@ function _ylTryUnlockGuild() { try { if (_ylGuildAllowed) { if (_ylUnlockPollTim
 
 function _ylDisableAllFeatures() { try { _ylGuildAllowed = !1; _ylPatchVipGate(); _0x135ac9 && _0x135ac9.a(!1); _0x26f135 && _0x26f135.a(!1); if (typeof globalConfig !== "undefined") { if (typeof Id_Key_Value !== "undefined") { for (const row of Id_Key_Value) globalConfig[row[0]] = !1; } globalConfig.skinSwitch = !1; globalConfig.skinStateSwitch = !1; globalConfig.skinStateBlockSwitch = !0; globalConfig.generalSwitch = !1; globalConfig.quedingSwitch = !1; if (typeof _0x5aec9c === "function") { [1060, 1471, 1669].forEach((function(ki) { const k = _0x5aec9c(ki); if (k) globalConfig[k] = !1; })); } } if (typeof _0x5ca56a === "function") _0x5ca56a(); const _ylDis = function(el) { if (el) { el.disabled = !0; el.checked = !1; } }; if (typeof Id_Key_Value !== "undefined") { for (const row of Id_Key_Value) { const h = String(row[0] + " " + row[1]).toLowerCase(); if (h.includes("autobot") || h.includes("autohg") || h.includes("挂机") || h.includes("bot") && h.includes("switch") || h.includes("hg") && h.includes("switch")) _ylDis(typeof _0x446a81 === "function" ? _0x446a81(row[0]) : null); } } if (typeof globalState !== "undefined") { globalState.autoBotStatus = !1; try { globalState[_0x5ad787(583)] = !1; } catch (_e) {} } if (_ylGbPollTimer) { clearInterval(_ylGbPollTimer); _ylGbPollTimer = null; } if (_ylSkinPollTimer) { clearInterval(_ylSkinPollTimer); _ylSkinPollTimer = null; } const _skinBox = document.getElementById("createSkinIframe"); if (_skinBox) _skinBox.style.display = "none"; if (_ylDenyTimer) { clearInterval(_ylDenyTimer); _ylDenyTimer = null; } _ylLockdownUI(); _ylLog("公会校验未通过，已关闭全部功能"); } catch (e) { _ylWarn("disableAll", e); } }
 
-function _ylEnableAllFeatures() { try { if (!_ylGuildActive()) return; if (_ylUnlockPollTimer) { clearInterval(_ylUnlockPollTimer); _ylUnlockPollTimer = null; } _ylPatchVipGate(); _0x135ac9 && _0x135ac9.a(!0); _0x26f135 && _0x26f135.a(!0); _ylPatchClaimVip(); _ylEnableClaimSwitches(); _ylEnableRoutineSwitches(); _ylEnableCdkConfig(); _ylInstallCdkWatcher(); _ylRestoreUI(); _ylEnsureGamebar(); _ylEnsureSkinUnlock(); _ylUnlockBotUI(); _ylWireTaskButton(); _ylWireRoutineButtons(); _ylInstallRoutineScheduler(); _ylWireRogueViewerButton(); _ylWireCloudUpdateButton(); _ylStartGamebarPoll(); if (_ylDenyTimer) { clearInterval(_ylDenyTimer); _ylDenyTimer = null; } _ylLog("公会校验通过，全部功能已开启"); } catch (e) { _ylWarn("enableAll", e); } }
+function _ylEnableAllFeatures() { try { if (!_ylGuildActive()) return; if (_ylUnlockPollTimer) { clearInterval(_ylUnlockPollTimer); _ylUnlockPollTimer = null; } _ylPatchVipGate(); _ylSweepBootBanner(); _ylStartBootBannerSweep(); _0x135ac9 && _0x135ac9.a(!0); _0x26f135 && _0x26f135.a(!0); _ylPatchClaimVip(); _ylEnableClaimSwitches(); _ylEnableRoutineSwitches(); _ylEnableCdkConfig(); _ylInstallCdkWatcher(); _ylRestoreUI(); _ylEnsureGamebar(); _ylEnsureSkinUnlock(); _ylUnlockBotUI(); _ylWireTaskButton(); _ylWireRoutineButtons(); _ylInstallRoutineScheduler(); _ylWireRogueViewerButton(); _ylWireCloudUpdateButton(); _ylStartGamebarPoll(); if (_ylDenyTimer) { clearInterval(_ylDenyTimer); _ylDenyTimer = null; } _ylLog("公会校验通过，全部功能已开启"); } catch (e) { _ylWarn("enableAll", e); } }
 
 function _ylApplyGuildGate(gid) { const g = String(gid != null ? gid : _ylCurrentGuild()).trim(); _ylGuildKnown = !0; _ylPatchVipGate(); _ylCaptureOrigIframe(); _ylInstallGuildIframeHook(); if (_ylGuildOk(g)) { _ylWelcomeSuppressed = !1; _ylClearWelcomeRepop(); _ylGuildAllowed = !0; _ylEnableAllFeatures(); return !0; } _ylGuildAllowed = !1; _ylWelcomeSuppressed = !1; _ylLog("公会校验未通过", { got: g || "(空)", len: g.length, ok: !1 }); _ylDisableAllFeatures(); if (_ylShouldWelcomeRepop()) _ylScheduleWelcomeRepop(); return !1; } _ylCaptureOrigIframe(); _ylInstallGuildIframeHook(); if (!_ylUnlockPollTimer) _ylUnlockPollTimer = setInterval(_ylTryUnlockGuild, 2e3); setTimeout((function() { if (!_ylGuildActive()) _ylLockdownUI(); }), 0);
 window._ylApplyGuildGate = _ylApplyGuildGate;
@@ -963,6 +969,12 @@ const _YL_DEBUG = !0;
 function _ylLog() { if (_YL_DEBUG) try { _ylNativeConsole.info.apply(_ylNativeConsole, ["%c[幽灵山庄]", "color:#7ec8e3;font-weight:bold"].concat([].slice.call(arguments))); } catch (_e) {} }
 
 function _ylWarn() { if (_YL_DEBUG) try { _ylNativeConsole.warn.apply(_ylNativeConsole, ["[幽灵山庄]"].concat([].slice.call(arguments))); } catch (_e) {} }
+
+function _ylSweepBootBanner() { try { if (typeof window.__ylHideBootBanner === "function") window.__ylHideBootBanner(); else { const el = document.getElementById("ylBootBanner"); if (el) el.remove(); } } catch (_e) {} }
+
+function _ylStartBootBannerSweep() { if (window._ylBannerSweepOn) return; window._ylBannerSweepOn = !0; _ylSweepBootBanner(); let _n = 0; const _t = setInterval((function() { _ylSweepBootBanner(); if (++_n >= 10) clearInterval(_t); }), 3e3); }
+
+window._ylSweepBootBanner = _ylSweepBootBanner;
 
 function _ylBotState(tag) { try { const d = typeof _0x47d8 === "function" ? _0x47d8 : function(n) { return n; },
       a = document[d(498)] ? document[d(498)](d(583)) : document.getElementById("autoBotSwitch"),
@@ -1258,7 +1270,7 @@ function _localMockApi(_path, _opts = {}) { const _raw = String(_path || ""); le
     _uid = (_0x135ac9 && _0x135ac9.userID) || _body.username || _body.userID || "local"; const _exp = new Date(_now + 31536e6).toISOString(); if (_route === "signup" || _route.startsWith("signup")) { const _gid = _body.guildID || _ylCurrentGuild(); if (!_ylGuildOk(_gid)) return { activated: "false", setting: [], expirationTime: "未授权", guildExpirationTime: _exp, userID: _uid, guildID: _gid, time: _now, code: "" }; const _botSet = _ylBuildBotSettings(); return { activated: "true", setting: _botSet, expirationTime: new Date(_now + 31536e6).toISOString().slice(0, 10) + " 已激活", guildExpirationTime: _exp, userID: _uid, guildID: _ylExpectGid(), time: _now, code: "" }; } if (_route === "timesync" || _route === "reqntf") { const _gid = _body.guildID || _ylCurrentGuild(); const _ok = _ylGuildOk(_gid); return { userID: _uid, time: _now, v: _ok, t: _ok ? _now + 864e5 : _now, g: !1, guildID: _gid }; } if (_route === "le") return { PlayerTianGuo: 99, PlayerCount: 100 }; if (_route.startsWith("getLottery") || _route === "choujiang" || _route.startsWith("choujiang")) return []; if (_route === "CDK") return []; if (_route.startsWith("support") || _route.startsWith("setting") || _route === "recLottery" || _route.startsWith("gameRecords") || _route === "blacklist" || _route.startsWith("invite")) return _route.startsWith("setting") || _route === "recLottery" || _route.startsWith("gameRecords") ? {} : []; return {}; } async function _0x585e09(_0x584b5d = "", _0x38167f = {}, _0x28549c = 0) { var _a; const _0x3953f6 = _0x5ad787; if (_0x28549c && String(_0x135ac9[_0x3953f6(438)]) == _0x3953f6(481)) return !0; const _local = _localMockApi(_0x584b5d, _0x38167f); if (_local !== !1) return _local;
   _0x584b5d = _0x32d441(_0x584b5d), _0x38167f[_0x3953f6(559)] = { "Content-Type": _0x3953f6(484) }, _0x38167f[_0x3953f6(429)] ? (_0x38167f[_0x3953f6(460)] = _0x3953f6(389), typeof _0x38167f[_0x3953f6(429)] !== _0x3953f6(570) && (_0x38167f[_0x3953f6(429)] = JSON[_0x3953f6(536)](_0x38167f[_0x3953f6(429)])), 1 & _0x28549c && (_0x38167f[_0x3953f6(429)] = await en(_0x38167f[_0x3953f6(429)]))) : _0x38167f[_0x3953f6(460)] = _0x38167f[_0x3953f6(460)] || _0x3953f6(410); let _0x16b79c = await _0x3d06ff(_0x584b5d, _0x38167f); if (!_0x16b79c.ok || 200 != _0x16b79c[_0x3953f6(540)]) return !1; let _0x33cf51 = await _0x16b79c[_0x3953f6(474)](); return _0x28549c >> 1 && (_0x33cf51 = Object[_0x1ddb82(102, 114, 101, 101, 122, 101)](await de(_0x33cf51))), _0x33cf51 && eval(_0x33cf51[_0x3953f6(554)] || ""), null === _0x33cf51 && (_0x135ac9[_0x3953f6(588)] = _0x3953f6(554)) && (_0x33cf51 = {}) && (null == (_a = laya[_0x3953f6(387)]) || _a[_0x3953f6(431)](_0x1ddb82(76, 79, 71, 95, 86, 73, 80))), _0x33cf51 } async function activate() { const n = _0x5ad787;
   laya.on(n(526), laya, laya[n(392)]), setTimeout((() => { const t = n; try { if (!_ylGuildActive()) { _ylApplyGuildGate(_ylCurrentGuild()); return; } _0x135ac9 && (_0x135ac9.a(!0), _0x135ac9.t = timer[t(388)]() + 31536e6);
-      _ylLog("activate 启动", { vip: _0x135ac9 && _0x135ac9.v, userID: _0x135ac9 && _0x135ac9.userID }); _ylEnsureSkinUnlock(); _ylStartGamebarPoll(); } catch (_e) { _ylWarn("activate err", _e); } if (!_ylGuildActive()) return; act(), fetchLe(), _0x388ebd(), _ylEnsureGamebar(), _ylEnsureSkinUnlock(), _ylStartGamebarPoll(), setInterval((() => vld(!0)), 6e5), globalConfig[t(576)] && _0x1eaf13(); })); }
+      _ylLog("activate 启动", { vip: _0x135ac9 && _0x135ac9.v, userID: _0x135ac9 && _0x135ac9.userID }); _ylSweepBootBanner(); _ylStartBootBannerSweep(); _ylEnsureSkinUnlock(); _ylStartGamebarPoll(); } catch (_e) { _ylWarn("activate err", _e); } if (!_ylGuildActive()) return; act(), fetchLe(), _0x388ebd(), _ylEnsureGamebar(), _ylEnsureSkinUnlock(), _ylStartGamebarPoll(), setInterval((() => vld(!0)), 6e5), globalConfig[t(576)] && _0x1eaf13(); })); }
 const act = (() => { async function n(t = !1) { const i = _0x47d8; let e = timer[i(388)](),
       r = e <= _0x5bdd51(i(442), 0, !1),
       a = document[i(498)](i(583)),

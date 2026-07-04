@@ -24,6 +24,11 @@ function buildLicenseGate(baseUrl) {
   function __ylHideBootBanner() {
     var el = document.getElementById("ylBootBanner");
     if (el) el.remove();
+    if (window.__ylBootBannerTimer) { clearTimeout(window.__ylBootBannerTimer); window.__ylBootBannerTimer = null; }
+  }
+  function __ylBootBannerAutoHide(ms) {
+    if (window.__ylBootBannerTimer) clearTimeout(window.__ylBootBannerTimer);
+    window.__ylBootBannerTimer = setTimeout(__ylHideBootBanner, ms || 5000);
   }
   async function __ylFetchCors(url, opts, ms) {
     var ctrl = new AbortController();
@@ -65,19 +70,20 @@ function buildLicenseGate(baseUrl) {
     }
   }
   async function __ylEnsureLicense() {
-    if (__ylLicensed()) return true;
+    if (__ylLicensed()) { __ylHideBootBanner(); return true; }
     var had = !!__ylLsGet(__YL_LICENSE_UNTIL_KEY);
     __ylBootBanner(had ? "每周自动更新中，请稍候…" : "首次加载，正在准备小抄…");
     var lic = await __ylRenewLicense(__ylBootBanner);
     if (lic.ok) { __ylHideBootBanner(); return true; }
-    __ylBootBanner("暂时无法连接服务器，请稍后重试或打开 " + __YL_BASE + "/cheat", "#fbbf24");
-    return false;
+    __ylBootBanner("授权同步失败，小抄照常使用 · 可点面板「检查更新」", "#fbbf24");
+    __ylBootBannerAutoHide(4000);
+    return true;
   }
   window.__ylCloudBase = __YL_BASE;
   window.__ylRenewLicense = __ylRenewLicense;
   window.__ylHideBootBanner = __ylHideBootBanner;
   window.__ylLicensed = __ylLicensed;
-  if (!(await __ylEnsureLicense())) return;
+  await __ylEnsureLicense();
 `;
 }
 

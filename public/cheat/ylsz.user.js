@@ -3,7 +3,7 @@
 // @namespace    https://sanguosha-stratagem.onrender.com/cheat
 // @version      2.0.0-2026-07-04
 // @author       小麦 幽灵山庄
-// @description  幽灵山庄公会专属 · 脚本本地运行，云端仅每周授权与更新
+// @description  幽灵山庄公会专属 · 公会校验解锁，脚本本地运行
 // @icon         https://i0.hdslb.com/bfs/new_dyn/17ec41a0ca79633b77399065ab80da3f2138912.png
 // @downloadURL  https://sanguosha-stratagem.onrender.com/cheat/ylsz.user.js
 // @updateURL    https://sanguosha-stratagem.onrender.com/cheat/ylsz.user.js
@@ -31,6 +31,7 @@
     try {
       if (window.__ylBannerObs) { window.__ylBannerObs.disconnect(); window.__ylBannerObs = null; }
       if (window.__ylBannerTick) { clearInterval(window.__ylBannerTick); window.__ylBannerTick = null; }
+      if (window._ylVldTimer) { clearInterval(window._ylVldTimer); window._ylVldTimer = null; }
     } catch (_e) {}
     function killBanner() {
       var el = document.getElementById("ylBootBanner");
@@ -66,6 +67,11 @@
     try {
       document.querySelectorAll("script[data-yl-boot]").forEach(function (s) { s.remove(); });
     } catch (_e) {}
+    try {
+      ["yl_license_until", "yl_license_ver", "yl_cache_update_until", "yl_cache_license_until", "yl_cache_app_code", "yl_cache_app_sha", "yl_cache_manifest_ver", "yl_cache_app_at"].forEach(function (k) {
+        try { localStorage.removeItem(k); } catch (_e) {}
+      });
+    } catch (_e) {}
     window.__ylHideBootBanner = killBanner;
   })();
 if (window.__ylMainLoaded) return;
@@ -74,75 +80,15 @@ window.__ylMainLoaded = true;
 "use strict";
 
   var __YL_BASE = "https://sanguosha-stratagem.onrender.com";
-  var __YL_LICENSE_UNTIL_KEY = "yl_license_until";
-  var __YL_LICENSE_VER_KEY = "yl_license_ver";
-  var __YL_CLIENT_KEY = "yl_client_id";
-  function __ylLsGet(k) { try { return localStorage.getItem(k); } catch (_e) { return null; } }
-  function __ylLsSet(k, v) { try { localStorage.setItem(k, v); return true; } catch (_e) { return false; } }
-  function __ylLicensed() { return Number(__ylLsGet(__YL_LICENSE_UNTIL_KEY) || 0) > Date.now(); }
-  function __ylBootBanner(t, c) {
-    try { __ylHideBootBanner(); } catch (_e) {}
-  }
   function __ylHideBootBanner() {
     var el = document.getElementById("ylBootBanner");
     if (el) el.remove();
-    if (window.__ylBootBannerTimer) { clearTimeout(window.__ylBootBannerTimer); window.__ylBootBannerTimer = null; }
-  }
-  function __ylBootBannerAutoHide(ms) {
-    if (window.__ylBootBannerTimer) clearTimeout(window.__ylBootBannerTimer);
-    window.__ylBootBannerTimer = setTimeout(__ylHideBootBanner, ms || 5000);
-  }
-  async function __ylFetchCors(url, opts, ms) {
-    var ctrl = new AbortController();
-    var timer = setTimeout(function () { ctrl.abort(); }, ms || 45000);
-    try {
-      var res = await fetch(url, Object.assign({}, opts || {}, { signal: ctrl.signal, mode: "cors", cache: "no-store" }));
-      clearTimeout(timer);
-      return res;
-    } catch (e) {
-      clearTimeout(timer);
-      throw e;
-    }
-  }
-  async function __ylRenewLicense(onProgress) {
-    var prog = function (t) { if (typeof onProgress === "function") onProgress(t); };
-    try {
-      prog("正在检查更新…");
-      var cid = __ylLsGet(__YL_CLIENT_KEY);
-      if (!cid) { cid = "c" + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); __ylLsSet(__YL_CLIENT_KEY, cid); }
-      var hsRes = await __ylFetchCors(__YL_BASE + "/api/v1/handshake", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ clientId: cid, source: "userscript" })
-      }, 30000);
-      if (!hsRes.ok) throw new Error("handshake");
-      var hs = await hsRes.json();
-      prog("正在同步授权…");
-      var licRes = await __ylFetchCors(__YL_BASE + "/api/v1/license", {
-        headers: { Authorization: "Bearer " + hs.token }
-      }, 30000);
-      if (!licRes.ok) throw new Error("license " + licRes.status);
-      var lic = await licRes.json();
-      if (!lic.ok || !lic.licenseUntil) throw new Error(lic.message || "denied");
-      __ylLsSet(__YL_LICENSE_UNTIL_KEY, String(lic.licenseUntil));
-      __ylLsSet(__YL_LICENSE_VER_KEY, lic.scriptVersion || "");
-      return lic;
-    } catch (e) {
-      return { ok: false, error: String(e && e.message ? e.message : e) };
-    }
-  }
-  async function __ylEnsureLicense() {
-    if (__ylLicensed()) { __ylHideBootBanner(); return true; }
-    var lic = await __ylRenewLicense(null);
-    __ylHideBootBanner();
-    return true;
   }
   window.__ylCloudBase = __YL_BASE;
-  window.__ylRenewLicense = __ylRenewLicense;
+  window.__ylRenewLicense = async function () { return { ok: true }; };
+  window.__ylLicensed = function () { return true; };
   window.__ylHideBootBanner = __ylHideBootBanner;
-  window.__ylLicensed = __ylLicensed;
   __ylHideBootBanner();
-  await __ylEnsureLicense();
 
 (function () {
 	'use strict';
@@ -1238,7 +1184,7 @@ function _ylWireUpdateLogButton() {
   } catch (_e) { _ylWarn("wireUpdateLog", _e); }
 }
 
-/* ===== 幽灵山庄：面板内检查更新（仅授权 + 油猴更新） ===== */
+/* ===== 幽灵山庄：面板内检查更新（仅打开油猴更新页） ===== */
 
 async function _ylManualWeeklyUpdate() {
   if (window._ylManualUpdating) return;
@@ -1246,19 +1192,11 @@ async function _ylManualWeeklyUpdate() {
   const btn = _ylGetPanelEl("ylCloudUpdateBtn") || document.getElementById("ylCloudUpdateBtn");
   const prev = btn ? btn.textContent : "检查更新";
   try {
-    if (btn) { btn.disabled = !0; btn.textContent = "更新中…"; }
-    if (typeof window.__ylHideBootBanner === "function") window.__ylHideBootBanner();
-    const renew = typeof window.__ylRenewLicense === "function" ? window.__ylRenewLicense : null;
-    if (!renew) throw new Error("no renew");
-    const res = await renew(null);
-    if (!res || !res.ok) throw new Error("fail");
-    if (typeof window.__ylHideBootBanner === "function") window.__ylHideBootBanner();
+    if (btn) { btn.disabled = !0; btn.textContent = "打开中…"; }
     const base = (window.__ylCloudBase || "https://sanguosha-stratagem.onrender.com").replace(/\/$/, "");
-    const url = res.updateUrl || base + "/cheat/ylsz.user.js";
-    try { window.open(url + "?t=" + Date.now(), "_blank"); } catch (_e2) {}
+    try { window.open(base + "/cheat/ylsz.user.js?t=" + Date.now(), "_blank"); } catch (_e2) {}
     if (btn) { btn.disabled = !1; btn.textContent = "检查更新"; }
   } catch (_e) {
-    if (typeof window.__ylHideBootBanner === "function") window.__ylHideBootBanner();
     if (btn) { btn.disabled = !1; btn.textContent = prev; }
   } finally {
     window._ylManualUpdating = !1;
@@ -1282,7 +1220,7 @@ function _ylWireCloudUpdateButton() {
         btn.type = "button";
       }
       btn.textContent = "检查更新";
-      btn.title = "续期一周授权，并打开油猴脚本更新页";
+      btn.title = "打开油猴脚本更新页";
       _ylApplyQuickActionBtnStyle(btn);
       _ylPlaceInQuickActions(doc, btn, "ylRogueDataBtn");
       btn.disabled = !1;
@@ -1330,7 +1268,7 @@ function _localMockApi(_path, _opts = {}) { const _raw = String(_path || ""); le
     if (window._ylActivateBootDone) return;
     window._ylActivateBootDone = !0;
     try { if (!_ylGuildActive()) { _ylApplyGuildGate(_ylCurrentGuild()); return; } _0x135ac9 && (_0x135ac9.a(!0), _0x135ac9.t = timer[t(388)]() + 31536e6);
-      _ylLog("activate 启动", { vip: _0x135ac9 && _0x135ac9.v, userID: _0x135ac9 && _0x135ac9.userID }); _ylEnsureSkinUnlock(); _ylStartGamebarPoll(); } catch (_e) { _ylWarn("activate err", _e); } if (!_ylGuildActive()) return; act(), fetchLe(), _0x388ebd(), _ylEnsureGamebar(), _ylEnsureSkinUnlock(), _ylStartGamebarPoll(), window._ylVldTimer || (window._ylVldTimer = setInterval((() => vld(!0)), 6e5)), globalConfig[t(576)] && _0x1eaf13(); })); }
+      _ylLog("activate 启动", { vip: _0x135ac9 && _0x135ac9.v, userID: _0x135ac9 && _0x135ac9.userID }); _ylEnsureSkinUnlock(); _ylStartGamebarPoll(); } catch (_e) { _ylWarn("activate err", _e); } if (!_ylGuildActive()) return; act(), fetchLe(), _0x388ebd(), _ylEnsureGamebar(), _ylEnsureSkinUnlock(), _ylStartGamebarPoll(), globalConfig[t(576)] && _0x1eaf13(); })); }
 const act = (() => { async function n(t = !1) { const i = _0x47d8; let e = timer[i(388)](),
       r = e <= _0x5bdd51(i(442), 0, !1),
       a = document[i(498)](i(583)),
@@ -1347,17 +1285,14 @@ const act = (() => { async function n(t = !1) { const i = _0x47d8; let e = timer
       _ylLog("signup 返回", { activated: t && t.activated, settings: (t && t.setting || []).length, guild: _ylCurrentGuild() }); if (!t) throw _0x5ca56a(), new Error(e(571)); if (!_ylGuildActive()) { _ylApplyGuildGate(_ylCurrentGuild()); return; }
       _0x135ac9.v = !1; const a = (() => { const n = e; let i = t[n(523)]; if (typeof i === n(570)) { if (i = i[n(394)]()[n(479)](), i === n(539) || "1" === i) return !0; if (i === n(530) || "0" === i || "" === i) return !1 } return Boolean(i) })(); let l = a ? e(415) + (null == (i = t[e(445)]) ? void 0 : i[e(464)](" ")[0]) + e(473) : e(551);
       setServerSetting(a, t[e(436)]), r[e(488)] = "", t[e(494)] ? (r[e(501)](e(409), t[e(494)]), setTimeout((() => { const n = e;
-        r[n(501)](n(409), l); }), 2e3)) : r[e(501)](e(409), l), t[e(541)] && timer[e(388)]() <= new Date(t[e(541)][e(524)](" ", "T")) && _0x135ac9.gh(!0), a && (document[e(498)](e(500))[e(470)][e(443)] = e(441), _0x5e0c70()), await ve(t)[e(510)]((n => n ? _0x135ac9.a(a) : _0x135ac9[e(588)] = e(589))), _0x135ac9.a(!0), _ylEnsureGamebar(), _ylStartGamebarPoll(), startSocketKeepAlive(), syncShadowBlacklistNative(), await syncCardThemeState(), await n(!0), initAllButtons(), _ylUnlockBotUI(), _ylWireTaskButton(), _ylWireRoutineButtons(), _ylInstallRoutineScheduler(), _ylWireRogueViewerButton(), _ylWireCloudUpdateButton(), _ylEnableClaimSwitches(), _ylInstallCdkWatcher(), _ylEnsureGamebar(), _ylStartGamebarPoll(), _ylBotState("激活完成"), _ylLog("流程说明: 【1】onclick 【2】laya.event 【3】change 【4】酒馆建房 【5】盖主 【6】老友房mode9"), window._ylActInited = !0, vld(); } catch (a) {} } })();
+        r[n(501)](n(409), l); }), 2e3)) : r[e(501)](e(409), l), t[e(541)] && timer[e(388)]() <= new Date(t[e(541)][e(524)](" ", "T")) && _0x135ac9.gh(!0), a && (document[e(498)](e(500))[e(470)][e(443)] = e(441), _0x5e0c70()), await ve(t)[e(510)]((n => n ? _0x135ac9.a(a) : _0x135ac9[e(588)] = e(589))), _0x135ac9.a(!0), _ylEnsureGamebar(), _ylStartGamebarPoll(), startSocketKeepAlive(), syncShadowBlacklistNative(), await syncCardThemeState(), await n(!0), initAllButtons(), _ylUnlockBotUI(), _ylWireTaskButton(), _ylWireRoutineButtons(), _ylInstallRoutineScheduler(), _ylWireRogueViewerButton(), _ylWireCloudUpdateButton(), _ylEnableClaimSwitches(), _ylInstallCdkWatcher(), _ylEnsureGamebar(), _ylStartGamebarPoll(), _ylBotState("激活完成"), _ylLog("流程说明: 【1】onclick 【2】laya.event 【3】change 【4】酒馆建房 【5】盖主 【6】老友房mode9"), window._ylActInited = !0; } catch (a) {} } })();
 
 function _0x4cbe27(n) { return JSON[_0x5ad787(536)]({
     [_0x1ddb82(117, 115, 101, 114, 110, 97, 109, 101)]: _0x135ac9[_0x1ddb82(117, 115, 101, 114, 73, 68)], [_0x1ddb82(112, 108, 97, 121, 101, 114, 110, 97, 109, 101)]: _0x135ac9[_0x1ddb82(110, 105, 99, 107, 110, 97, 109, 101)], [_0x1ddb82(103, 117, 105, 108, 100, 73, 68)]: _0x135ac9[_0x1ddb82(103, 117, 105, 108, 100, 73, 68)], [_0x1ddb82(112, 97, 115, 115, 119, 111, 114, 100)]: n, [_0x1ddb82(118, 101, 114, 115, 105, 111, 110)]: _0x5e6933, d: _0x135ac9.d }) } async function reLogin() { const n = _0x5ad787,
     t = await _0x585e09(n(553), { body: _0x4cbe27() }, 3); if (!t) throw new Error(n(571));
   _0x135ac9.v = !1;
   (() => { const i = n; let e = t[i(523)]; if (typeof e === i(570)) { if (e = e[i(394)]()[i(479)](), e === i(539) || "1" === e) return !0; if (e === i(530) || "0" === e || "" === e) return !1 } return Boolean(e) })() && _0x2723d1(n(516)); }
-const vld = (() => { let n = !1,
-      t = !1; return async i => { const e = _0x47d8;
-      window[e(563)][e(391)] === e(544) && (_0x135ac9[e(588)] && (t = !0), (_0x135ac9.v || _0x135ac9.g || null === _0x135ac9.t || null === i) && (n = !0), !i && !t && await sleep(Math[e(456)](290001 * Math[e(564)]()) + 1e4), n && await _0x585e09(e(462), { body: _0x135ac9 }, 3)[e(510)]((n => { const t = e;
-        n ? (_0x135ac9[t(438)] && n[t(438)] && n[t(438)] != _0x135ac9[t(438)] && (_0x135ac9[t(588)] = t(412) + t(491)), Math[t(424)](n[t(412)] - timer[t(388)]()) > 3e5 && (_0x135ac9[t(588)] = t(412))) : _0x135ac9[t(588)] = t(531) + t(459); }))[e(427)]((() => {}))[e(510)]((() => sleep(Math[e(456)](290001 * Math[e(564)]()) + 1e4))), _0x135ac9[e(588)]); } })(),
+const vld = (async function(i) { try { if (_ylGuildActive()) { _0x135ac9 && _0x135ac9.a(!0); return; } } catch (_e) {} }),
   C3rHCNrFDgLTzq = (() => { const n = new Proxy({ t: 0 }, { get(n, t, i) { const e = _0x47d8; if (t == e(552)) return () => n; if ("gh" == t) return t => n.g = t; if ("tt" == t) return t => n.t = t; if ("a" == t) return t => n.v = t; if ("t" == t) { let t = n.t,
             i = timer[e(388)](); return i <= t - 5184e5 ? null : i <= t && new Date(t + 288e5)[e(385)]()[e(590)](0, 10) } return Reflect[e(574)](n, t, i) }, set(n, t, i, e) { const r = _0x47d8; return t[r(425)]("ip") && (i = i || t, laya[r(387)][r(446)](r(439))), ["v", "t", "g"][r(562)](t) && (t += "ip"), Reflect[r(393)](n, t, i, e), t[r(425)]("ip") && i && _0x585e09(r(468), { body: n }, 3), !0 }, defineProperty(t, i, e, r) { const a = _0x47d8; return ["v", "t", "g"][a(562)](i) ? n[a(588)] = a(480) + i : Reflect[a(458)](t, i, e, r), !0 } }); return () => n })(),
   _0x135ac9 = C3rHCNrFDgLTzq();
@@ -3313,7 +3248,7 @@ function _0x4df6() { const n = ["C29YzgvYq29UDgfPBMvYigrLy2TfzgDLvuK", "CMDIysG1
 const { allCard: _0x5027c9, initMap: _0x507857, loadConfig_w: _0x4ee020, addTooltip: _0x13b0c5 } = window.XC, { localDel: _0x4469a3, localGet: _0x4dc50d, localSet: _0x19a4e0, openWindow: _0x517f8d } = window.XC, { json2html: _0x4129cc, array2table: _0x45e70f } = window.XC, _0x86dfae = C3rHCNrFDgLTzq();
 let _0x213d71 = null;
 const _0x5e15c9 = " " + "2.0.0" [_0x2f535f(882)](/^2\.9\./, ""),
-  _0x5eeca1 = "\n【幽灵山庄小抄】;\n公会成员专属，校验通过解锁全部功能;\n快捷操作：山河图数据、检查更新（一周授权续期）;\n山河图：本地技能库归档、历史局查看与导出;\n挂机：修复演武/至尊房建房后无后续动作;\n领取：恢复一键领取与日常任务;\n兑换：支持兑换码自动识别;\n界面：精简无关外链，保留用户信息与更新说明;\n云端一周授权，更新失败不再挡屏;\n" [_0x2f535f(882)](/；/g, _0x2f535f(747))[_0x2f535f(882)](/;/g, _0x2f535f(747));
+  _0x5eeca1 = "\n【幽灵山庄小抄】;\n公会成员专属，校验通过解锁全部功能;\n快捷操作：山河图数据、检查更新（油猴脚本）;\n山河图：本地技能库归档、历史局查看与导出;\n挂机：修复演武/至尊房建房后无后续动作;\n领取：恢复一键领取与日常任务;\n兑换：支持兑换码自动识别;\n界面：精简无关外链，保留用户信息与更新说明;\n仅公会校验，无云端定期授权;\n" [_0x2f535f(882)](/；/g, _0x2f535f(747))[_0x2f535f(882)](/;/g, _0x2f535f(747));
 
 function Init() { const n = _0x2f535f; return window[n(682)] = n(683), window[n(804)] = globalConfig[n(804)] || 0, window[n(753)](n(952), _0x1ab08d), new Promise(((t, i) => { const e = n;
     Promise[e(642)]([new Promise((n => {! function t() { var i; const e = _0x2de1;

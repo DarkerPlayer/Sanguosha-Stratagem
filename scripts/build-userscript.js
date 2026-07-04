@@ -26,7 +26,7 @@ function buildHeader(version) {
 // @namespace    ${BASE}/cheat
 // @version      ${version}
 // @author       小麦 幽灵山庄
-// @description  幽灵山庄公会专属 · 脚本本地运行，云端仅每周授权与更新
+// @description  幽灵山庄公会专属 · 公会校验解锁，脚本本地运行
 // @icon         https://i0.hdslb.com/bfs/new_dyn/17ec41a0ca79633b77399065ab80da3f2138912.png
 // @downloadURL  ${BASE}/cheat/ylsz.user.js
 // @updateURL    ${BASE}/cheat/ylsz.user.js

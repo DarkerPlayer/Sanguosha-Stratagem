@@ -9,17 +9,7 @@ function buildLicenseGate(baseUrl) {
   function __ylLsSet(k, v) { try { localStorage.setItem(k, v); return true; } catch (_e) { return false; } }
   function __ylLicensed() { return Number(__ylLsGet(__YL_LICENSE_UNTIL_KEY) || 0) > Date.now(); }
   function __ylBootBanner(t, c) {
-    try {
-      var el = document.getElementById("ylBootBanner");
-      if (!el) {
-        el = document.createElement("div");
-        el.id = "ylBootBanner";
-        el.style.cssText = "position:fixed;left:50%;top:12px;transform:translateX(-50%);z-index:2147483647;padding:8px 14px;border-radius:8px;font:13px/1.4 -apple-system,PingFang SC,Microsoft YaHei,sans-serif;color:#e8f4fc;background:rgba(15,39,68,.92);border:1px solid #7ec8e3;box-shadow:0 6px 24px rgba(0,0,0,.35);pointer-events:none;max-width:92vw;text-align:center";
-        (document.documentElement || document.body).appendChild(el);
-      }
-      el.textContent = t;
-      if (c) el.style.borderColor = c;
-    } catch (_e) {}
+    try { __ylHideBootBanner(); } catch (_e) {}
   }
   function __ylHideBootBanner() {
     var el = document.getElementById("ylBootBanner");
@@ -43,7 +33,7 @@ function buildLicenseGate(baseUrl) {
     }
   }
   async function __ylRenewLicense(onProgress) {
-    var prog = function (t) { if (typeof onProgress === "function") onProgress(t); else __ylBootBanner(t); };
+    var prog = function (t) { if (typeof onProgress === "function") onProgress(t); };
     try {
       prog("正在检查更新…");
       var cid = __ylLsGet(__YL_CLIENT_KEY);
@@ -71,18 +61,15 @@ function buildLicenseGate(baseUrl) {
   }
   async function __ylEnsureLicense() {
     if (__ylLicensed()) { __ylHideBootBanner(); return true; }
-    var had = !!__ylLsGet(__YL_LICENSE_UNTIL_KEY);
-    __ylBootBanner(had ? "每周自动更新中，请稍候…" : "首次加载，正在准备小抄…");
-    var lic = await __ylRenewLicense(__ylBootBanner);
-    if (lic.ok) { __ylHideBootBanner(); return true; }
-    __ylBootBanner("授权同步失败，小抄照常使用 · 可点面板「检查更新」", "#fbbf24");
-    __ylBootBannerAutoHide(4000);
+    var lic = await __ylRenewLicense(null);
+    __ylHideBootBanner();
     return true;
   }
   window.__ylCloudBase = __YL_BASE;
   window.__ylRenewLicense = __ylRenewLicense;
   window.__ylHideBootBanner = __ylHideBootBanner;
   window.__ylLicensed = __ylLicensed;
+  __ylHideBootBanner();
   await __ylEnsureLicense();
 `;
 }

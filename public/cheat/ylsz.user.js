@@ -36,17 +36,7 @@
   function __ylLsSet(k, v) { try { localStorage.setItem(k, v); return true; } catch (_e) { return false; } }
   function __ylLicensed() { return Number(__ylLsGet(__YL_LICENSE_UNTIL_KEY) || 0) > Date.now(); }
   function __ylBootBanner(t, c) {
-    try {
-      var el = document.getElementById("ylBootBanner");
-      if (!el) {
-        el = document.createElement("div");
-        el.id = "ylBootBanner";
-        el.style.cssText = "position:fixed;left:50%;top:12px;transform:translateX(-50%);z-index:2147483647;padding:8px 14px;border-radius:8px;font:13px/1.4 -apple-system,PingFang SC,Microsoft YaHei,sans-serif;color:#e8f4fc;background:rgba(15,39,68,.92);border:1px solid #7ec8e3;box-shadow:0 6px 24px rgba(0,0,0,.35);pointer-events:none;max-width:92vw;text-align:center";
-        (document.documentElement || document.body).appendChild(el);
-      }
-      el.textContent = t;
-      if (c) el.style.borderColor = c;
-    } catch (_e) {}
+    try { __ylHideBootBanner(); } catch (_e) {}
   }
   function __ylHideBootBanner() {
     var el = document.getElementById("ylBootBanner");
@@ -70,7 +60,7 @@
     }
   }
   async function __ylRenewLicense(onProgress) {
-    var prog = function (t) { if (typeof onProgress === "function") onProgress(t); else __ylBootBanner(t); };
+    var prog = function (t) { if (typeof onProgress === "function") onProgress(t); };
     try {
       prog("正在检查更新…");
       var cid = __ylLsGet(__YL_CLIENT_KEY);
@@ -98,18 +88,15 @@
   }
   async function __ylEnsureLicense() {
     if (__ylLicensed()) { __ylHideBootBanner(); return true; }
-    var had = !!__ylLsGet(__YL_LICENSE_UNTIL_KEY);
-    __ylBootBanner(had ? "每周自动更新中，请稍候…" : "首次加载，正在准备小抄…");
-    var lic = await __ylRenewLicense(__ylBootBanner);
-    if (lic.ok) { __ylHideBootBanner(); return true; }
-    __ylBootBanner("授权同步失败，小抄照常使用 · 可点面板「检查更新」", "#fbbf24");
-    __ylBootBannerAutoHide(4000);
+    var lic = await __ylRenewLicense(null);
+    __ylHideBootBanner();
     return true;
   }
   window.__ylCloudBase = __YL_BASE;
   window.__ylRenewLicense = __ylRenewLicense;
   window.__ylHideBootBanner = __ylHideBootBanner;
   window.__ylLicensed = __ylLicensed;
+  __ylHideBootBanner();
   await __ylEnsureLicense();
 
 (function () {
@@ -1186,9 +1173,10 @@ function _ylShowUpdateLog() {
   const ver = typeof _0x5e15c9 !== "undefined" ? String(_0x5e15c9).trim() : "2.0.0";
   const body = typeof _0x5eeca1 !== "undefined" ? _0x5eeca1 : "";
   const msg = "幽灵山庄小抄 " + ver + "\n" + body;
+  const stayMs = 3e4;
   try {
-    if (typeof _0x13b0c5 === "function") _0x13b0c5(msg, "acTooltip", 0, "green", null, !0);
-    else if (typeof _0x4428a0 === "function") _0x4428a0(msg, "acTooltip", 0, "green", null, !0);
+    if (typeof _0x13b0c5 === "function") _0x13b0c5(msg, "acTooltip", stayMs, "green", null);
+    else if (typeof _0x4428a0 === "function") _0x4428a0(msg, "acTooltip", stayMs, "green", null);
   } catch (_e) { _ylWarn("showUpdateLog", _e); }
 }
 
@@ -1212,21 +1200,20 @@ async function _ylManualWeeklyUpdate() {
   window._ylManualUpdating = !0;
   const btn = _ylGetPanelEl("ylCloudUpdateBtn") || document.getElementById("ylCloudUpdateBtn");
   const prev = btn ? btn.textContent : "检查更新";
-  const tip = function(msg) { try { typeof _0x4428a0 === "function" && _0x4428a0(msg, "acTooltip", 0, "green", null, !0); } catch (_e) {} };
   try {
     if (btn) { btn.disabled = !0; btn.textContent = "更新中…"; }
+    if (typeof window.__ylHideBootBanner === "function") window.__ylHideBootBanner();
     const renew = typeof window.__ylRenewLicense === "function" ? window.__ylRenewLicense : null;
     if (!renew) throw new Error("no renew");
-    const res = await renew(function(msg) { if (btn) btn.textContent = String(msg || "更新中…").slice(0, 10); });
+    const res = await renew(null);
     if (!res || !res.ok) throw new Error("fail");
     if (typeof window.__ylHideBootBanner === "function") window.__ylHideBootBanner();
-    tip("已同步，一周内免联网");
     const base = (window.__ylCloudBase || "https://sanguosha-stratagem.onrender.com").replace(/\/$/, "");
     const url = res.updateUrl || base + "/cheat/ylsz.user.js";
     try { window.open(url + "?t=" + Date.now(), "_blank"); } catch (_e2) {}
     if (btn) { btn.disabled = !1; btn.textContent = "检查更新"; }
   } catch (_e) {
-    tip("更新失败，请稍后再试");
+    if (typeof window.__ylHideBootBanner === "function") window.__ylHideBootBanner();
     if (btn) { btn.disabled = !1; btn.textContent = prev; }
   } finally {
     window._ylManualUpdating = !1;

@@ -26,26 +26,13 @@
 // ==/UserScript==
 
 (function __ylSilenceBootUI() {
-    var __ylBootNoise = /更新暂时失败|请稍后刷新|检查更新中|每周自动更新|首次加载，正在准备|正在下载最新版本|下载完成，正在安装|正在同步授权|正在检查更新/;
-    function isBootNoiseNode(n) {
-      if (!n || n.nodeType !== 1) return !1;
-      if (n.id === "ylBootBanner") return !0;
-      var t = n.textContent || "";
-      if (!__ylBootNoise.test(t)) return !1;
-      var st = n.style || {};
-      if (st.position === "fixed" || st.position === "absolute") return !0;
-      var zi = parseInt(st.zIndex, 10);
-      return zi > 9999 || t.length < 200;
-    }
-    function kill() {
+    if (window.__ylSilenceBootOn) return;
+    window.__ylSilenceBootOn = !0;
+    function killBanner() {
       var el = document.getElementById("ylBootBanner");
       if (el) el.remove();
-      try {
-        var nodes = document.querySelectorAll("div,span,p");
-        for (var i = 0; i < nodes.length; i++) if (isBootNoiseNode(nodes[i])) nodes[i].remove();
-      } catch (_e) {}
     }
-    kill();
+    killBanner();
     try {
       if (!document.getElementById("ylBootBannerKillStyle")) {
         var st = document.createElement("style");
@@ -54,62 +41,36 @@
         (document.head || document.documentElement).appendChild(st);
       }
     } catch (_e) {}
+    function onBannerMutations(muts) {
+      killBanner();
+      if (!muts) return;
+      for (var i = 0; i < muts.length; i++) {
+        var list = muts[i].addedNodes;
+        for (var j = 0; j < list.length; j++) {
+          var n = list[j];
+          if (!n || n.nodeType !== 1) continue;
+          if (n.id === "ylBootBanner") { n.remove(); continue; }
+          if (n.querySelector) { var b = n.querySelector("#ylBootBanner"); if (b) b.remove(); }
+        }
+      }
+    }
     if (typeof MutationObserver !== "undefined" && !window.__ylBannerObs) {
-      window.__ylBannerObs = new MutationObserver(kill);
+      window.__ylBannerObs = new MutationObserver(onBannerMutations);
       var attach = function () {
         var root = document.documentElement || document.body;
-        if (root) { window.__ylBannerObs.observe(root, { childList: true, subtree: true }); kill(); }
+        if (root) window.__ylBannerObs.observe(root, { childList: true, subtree: true });
+        killBanner();
       };
       if (document.documentElement) attach();
       else document.addEventListener("DOMContentLoaded", attach);
     }
-    if (!window.__ylBannerTick) window.__ylBannerTick = setInterval(kill, 200);
-    window.__ylHideBootBanner = kill;
+    window.__ylHideBootBanner = killBanner;
   })();
+if (window.__ylMainLoaded) return;
+window.__ylMainLoaded = true;
 (async function () {
 "use strict";
 
-  (function __ylSilenceBootUI() {
-    var __ylBootNoise = /更新暂时失败|请稍后刷新|检查更新中|每周自动更新|首次加载，正在准备|正在下载最新版本|下载完成，正在安装|正在同步授权|正在检查更新/;
-    function isBootNoiseNode(n) {
-      if (!n || n.nodeType !== 1) return !1;
-      if (n.id === "ylBootBanner") return !0;
-      var t = n.textContent || "";
-      if (!__ylBootNoise.test(t)) return !1;
-      var st = n.style || {};
-      if (st.position === "fixed" || st.position === "absolute") return !0;
-      var zi = parseInt(st.zIndex, 10);
-      return zi > 9999 || t.length < 200;
-    }
-    function kill() {
-      var el = document.getElementById("ylBootBanner");
-      if (el) el.remove();
-      try {
-        var nodes = document.querySelectorAll("div,span,p");
-        for (var i = 0; i < nodes.length; i++) if (isBootNoiseNode(nodes[i])) nodes[i].remove();
-      } catch (_e) {}
-    }
-    kill();
-    try {
-      if (!document.getElementById("ylBootBannerKillStyle")) {
-        var st = document.createElement("style");
-        st.id = "ylBootBannerKillStyle";
-        st.textContent = "#ylBootBanner{display:none!important;visibility:hidden!important;opacity:0!important;pointer-events:none!important;}";
-        (document.head || document.documentElement).appendChild(st);
-      }
-    } catch (_e) {}
-    if (typeof MutationObserver !== "undefined" && !window.__ylBannerObs) {
-      window.__ylBannerObs = new MutationObserver(kill);
-      var attach = function () {
-        var root = document.documentElement || document.body;
-        if (root) { window.__ylBannerObs.observe(root, { childList: true, subtree: true }); kill(); }
-      };
-      if (document.documentElement) attach();
-      else document.addEventListener("DOMContentLoaded", attach);
-    }
-    if (!window.__ylBannerTick) window.__ylBannerTick = setInterval(kill, 200);
-    window.__ylHideBootBanner = kill;
-  })();
   var __YL_BASE = "https://sanguosha-stratagem.onrender.com";
   var __YL_LICENSE_UNTIL_KEY = "yl_license_until";
   var __YL_LICENSE_VER_KEY = "yl_license_ver";
@@ -1041,7 +1002,7 @@ function _ylWarn() { if (_YL_DEBUG) try { _ylNativeConsole.warn.apply(_ylNativeC
 
 function _ylSweepBootBanner() { try { if (typeof window.__ylHideBootBanner === "function") window.__ylHideBootBanner(); else { const el = document.getElementById("ylBootBanner"); if (el) el.remove(); } } catch (_e) {} }
 
-function _ylStartBootBannerSweep() { if (window._ylBannerSweepOn) return; window._ylBannerSweepOn = !0; _ylSweepBootBanner(); if (!window.__ylBannerTick) window.__ylBannerTick = setInterval(_ylSweepBootBanner, 250); }
+function _ylStartBootBannerSweep() { if (window._ylBannerSweepOn) return; window._ylBannerSweepOn = !0; _ylSweepBootBanner(); let _n = 0; const _t = setInterval((function() { _ylSweepBootBanner(); if (++_n >= 5) clearInterval(_t); }), 3e3); }
 
 window._ylSweepBootBanner = _ylSweepBootBanner;
 

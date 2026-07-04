@@ -73,7 +73,7 @@ function assemble(body) {
   const version = process.env.YL_MODULE_VERSION || "2.0.0-" + new Date().toISOString().slice(0, 10);
   const gate = buildLicenseGate(BASE);
   const main = body.trim();
-  const wrapped = buildHeader(version) + "\n" + buildBootBannerSilencer() + "\n(async function () {\n\"use strict\";\n" + gate + "\n" + main + "\n})();\n";
+  const wrapped = buildHeader(version) + "\n" + buildBootBannerSilencer() + "\nif (window.__ylMainLoaded) return;\nwindow.__ylMainLoaded = true;\n(async function () {\n\"use strict\";\n" + gate + "\n" + main + "\n})();\n";
   fs.mkdirSync(path.dirname(out), { recursive: true });
   fs.writeFileSync(out, wrapped, "utf8");
   writeManifest(out, version);

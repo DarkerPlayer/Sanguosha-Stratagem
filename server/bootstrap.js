@@ -27,6 +27,7 @@ function buildBootstrapScript(baseUrl, version) {
 // @grant        none
 // @run-at       document-start
 // ==/UserScript==
+${require("./license-gate").buildBootBannerSilencer()}
 (function () {
   "use strict";
   var BASE = "${base}";

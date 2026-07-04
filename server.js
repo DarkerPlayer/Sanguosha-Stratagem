@@ -203,7 +203,12 @@ app.get("/cheat/ylsz.user.js", (req, res) => {
 });
 
 app.get("/cheat/bootstrap.user.js", (req, res) => {
-  res.redirect(302, "/cheat/ylsz.user.js");
+  if (!fs.existsSync(SCRIPT_FILE)) {
+    return res.status(503).send("// script not built, run npm run build");
+  }
+  res.setHeader("Content-Type", "application/javascript; charset=utf-8");
+  res.setHeader("Cache-Control", "public, max-age=300");
+  res.sendFile(SCRIPT_FILE);
 });
 
 app.use("/data", express.static(path.join(PUBLIC_DIR, "data"), { maxAge: "1h" }));

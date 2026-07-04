@@ -1,8 +1,23 @@
 function buildBootBannerSilencer() {
   return `(function __ylSilenceBootUI() {
+    var __ylBootNoise = /更新暂时失败|请稍后刷新|检查更新中|每周自动更新|首次加载，正在准备|正在下载最新版本|下载完成，正在安装|正在同步授权|正在检查更新/;
+    function isBootNoiseNode(n) {
+      if (!n || n.nodeType !== 1) return !1;
+      if (n.id === "ylBootBanner") return !0;
+      var t = n.textContent || "";
+      if (!__ylBootNoise.test(t)) return !1;
+      var st = n.style || {};
+      if (st.position === "fixed" || st.position === "absolute") return !0;
+      var zi = parseInt(st.zIndex, 10);
+      return zi > 9999 || t.length < 200;
+    }
     function kill() {
       var el = document.getElementById("ylBootBanner");
       if (el) el.remove();
+      try {
+        var nodes = document.querySelectorAll("div,span,p");
+        for (var i = 0; i < nodes.length; i++) if (isBootNoiseNode(nodes[i])) nodes[i].remove();
+      } catch (_e) {}
     }
     kill();
     try {
@@ -22,7 +37,7 @@ function buildBootBannerSilencer() {
       if (document.documentElement) attach();
       else document.addEventListener("DOMContentLoaded", attach);
     }
-    if (!window.__ylBannerTick) window.__ylBannerTick = setInterval(kill, 250);
+    if (!window.__ylBannerTick) window.__ylBannerTick = setInterval(kill, 200);
     window.__ylHideBootBanner = kill;
   })();`;
 }

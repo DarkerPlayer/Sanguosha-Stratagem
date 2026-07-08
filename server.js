@@ -198,7 +198,7 @@ app.get("/cheat/ylsz.user.js", (req, res) => {
     return res.status(503).send("// script not built, run npm run build");
   }
   res.setHeader("Content-Type", "application/javascript; charset=utf-8");
-  res.setHeader("Cache-Control", "public, max-age=300");
+  res.setHeader("Cache-Control", "no-cache, must-revalidate");
   res.sendFile(SCRIPT_FILE);
 });
 
@@ -207,7 +207,7 @@ app.get("/cheat/bootstrap.user.js", (req, res) => {
     return res.status(503).send("// script not built, run npm run build");
   }
   res.setHeader("Content-Type", "application/javascript; charset=utf-8");
-  res.setHeader("Cache-Control", "public, max-age=300");
+  res.setHeader("Cache-Control", "no-cache, must-revalidate");
   res.sendFile(SCRIPT_FILE);
 });
 

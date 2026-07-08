@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name         幽灵山庄打小抄
 // @namespace    https://sanguosha-stratagem.onrender.com/cheat
-// @version      2.0.0-2026-07-08
+// @version      2.0.1-2026-07-08
 // @author       小麦 幽灵山庄
 // @description  幽灵山庄公会专属 · 公会校验解锁，脚本本地运行
 // @icon         https://i0.hdslb.com/bfs/new_dyn/17ec41a0ca79633b77399065ab80da3f2138912.png

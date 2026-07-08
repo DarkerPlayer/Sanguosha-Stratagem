@@ -1,10 +1,10 @@
 {
-  "version": "2.0.0-2026-07-06",
+  "version": "2.0.0-2026-07-08",
   "killSwitch": false,
   "message": "",
   "scriptFile": "ylsz.user.js",
-  "scriptSha256": "a578978889e221efba11fa35da7d5eae1857fdb929d4da6d3d7334ec97ab69f6",
-  "scriptSize": 922967,
+  "scriptSha256": "51431d9135472f5f7d2193ab982acab976d6cdd4a51f25cba23e176570d1bdec",
+  "scriptSize": 924589,
   "data": {
     "rogueArchive": "/data/%E5%B1%B1%E6%B2%B3%E5%9B%BE%E6%95%B0%E6%8D%AE_2026-07-03%20(1).json"
   }
